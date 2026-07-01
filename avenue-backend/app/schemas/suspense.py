@@ -1,0 +1,40 @@
+import uuid
+from datetime import datetime
+from typing import Any, Optional
+
+from pydantic import BaseModel
+
+
+class SuspenseItemResponse(BaseModel):
+    id: uuid.UUID
+    developer_id: uuid.UUID
+    account_number: str
+    amount: int  # In kobo
+    sender_name: Optional[str]
+    raw_narration: Optional[str]
+    nomba_reference: Optional[str]
+    reason: str
+    status: str
+    raw_payload: dict
+    resolved_at: Optional[datetime]
+    resolution_note: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ResolveSuspenseRequest(BaseModel):
+    action: str  # "CREDIT_WALLET" | "DISMISS"
+    target_wallet_id: Optional[uuid.UUID] = None
+    note: Optional[str] = None
+
+
+class FlagSuspenseRequest(BaseModel):
+    note: str
+
+
+class SuspenseListResponse(BaseModel):
+    items: list[SuspenseItemResponse]
+    total: int
+    page: int
+    limit: int
