@@ -7,6 +7,9 @@ from pydantic import BaseModel
 
 class CreateWalletRequest(BaseModel):
     customer_reference: str
+    first_name: str
+    last_name: str
+    email: str
     label: Optional[str] = None
     currency: str = "NGN"
     system_prompt: Optional[str] = None
@@ -27,6 +30,9 @@ class VirtualAccountDetails(BaseModel):
 class WalletResponse(BaseModel):
     id: uuid.UUID
     customer_reference: str
+    first_name: str
+    last_name: str
+    email: str
     label: Optional[str]
     account_number: str
     bank_name: str

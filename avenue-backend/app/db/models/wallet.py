@@ -16,6 +16,9 @@ class Wallet(Base):
         UUID(as_uuid=True), ForeignKey("developers.id", ondelete="CASCADE"), nullable=False, index=True
     )
     customer_reference: Mapped[str] = mapped_column(String(255), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Nomba virtual account details
