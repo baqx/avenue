@@ -11,6 +11,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: boolean;
   asChild?: boolean;
   href?: string;
+  external?: boolean;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -37,6 +38,7 @@ export function Button({
   className,
   children,
   href,
+  external,
   ...props
 }: ButtonProps) {
   const classes = cn(
@@ -49,7 +51,12 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link 
+        href={href} 
+        className={classes}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+      >
         {children}
         {icon && <ArrowRight weight="bold" className="shrink-0" />}
       </Link>

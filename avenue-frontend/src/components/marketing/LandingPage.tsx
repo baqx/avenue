@@ -45,18 +45,11 @@ function HeroSection() {
             <Button variant="primary" size="lg" href="/signup" icon className="text-lg h-14 px-8 border-2 border-[#022c22]">
               Start Building Free
             </Button>
-            <Button variant="outline" size="lg" href="/docs" className="text-lg h-14 px-8 border-2 border-[#022c22] text-[#022c22] hover:bg-[#f0fdf4]">
+            <Button variant="outline" size="lg" href="https://avenue.mintlify.app" external className="text-lg h-14 px-8 border-2 border-[#022c22] text-[#022c22] hover:bg-[#f0fdf4]">
               View Docs
             </Button>
           </div>
-          <div className="flex flex-wrap items-center gap-6 mt-10">
-            {["No credit card needed", "Live in minutes", "Free tier"].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-sm text-[#022c22] font-bold tracking-tight">
-                <CheckCircle weight="fill" className="text-[#10b981] w-5 h-5 shrink-0" />
-                {item}
-              </div>
-            ))}
-          </div>
+          
         </motion.div>
       </div>
 
@@ -352,7 +345,7 @@ function CTASection() {
             <Button variant="primary" size="lg" href="/signup" className="h-16 px-12 text-xl bg-[#10b981] text-[#022c22] hover:bg-white hover:text-[#022c22] border-2 border-transparent font-bold">
               Create free account
             </Button>
-            <Button variant="outline" size="lg" href="/docs" className="h-16 px-12 text-xl border-2 border-white text-white hover:bg-white hover:text-[#022c22] font-bold">
+            <Button variant="outline" size="lg" href="https://avenue.mintlify.app" external className="h-16 px-12 text-xl border-2 border-white text-white hover:bg-white hover:text-[#022c22] font-bold">
               Read the docs
             </Button>
           </div>

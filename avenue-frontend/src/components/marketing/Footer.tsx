@@ -8,10 +8,10 @@ const footerLinks = {
     { label: "Pricing",     href: "/#pricing" },
   ],
   Developers: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API Reference", href: "/docs/api-reference" },
-    { label: "Quickstart",    href: "/docs/quickstart" },
-    { label: "Webhooks",      href: "/docs/webhooks" },
+    { label: "Documentation", href: "https://avenue.mintlify.app", external: true },
+    { label: "API Reference", href: "https://avenue.mintlify.app/api-reference", external: true },
+    { label: "Quickstart",    href: "https://avenue.mintlify.app/quickstart", external: true },
+    { label: "Webhooks",      href: "https://avenue.mintlify.app/webhooks", external: true },
   ],
 };
 
@@ -57,6 +57,8 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
+                      target={(link as any).external ? "_blank" : undefined}
+                      rel={(link as any).external ? "noopener noreferrer" : undefined}
                       className="text-sm text-[#6a6c6c] hover:text-[#022c22] transition-colors"
                     >
                       {link.label}

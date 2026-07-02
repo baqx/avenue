@@ -341,7 +341,7 @@ export default function FeaturesPage() {
         
         <div className="max-w-7xl mx-auto px-5 lg:px-8 relative z-10">
           <div className="max-w-4xl">
-            <span className="text-[#10b981] font-bold tracking-widest uppercase mb-6 block">Platform Features</span>
+          
             <h1 className="text-6xl lg:text-8xl font-bold text-white tracking-tighter leading-[1.05] mb-8">
               Everything you need to build on payments.
             </h1>

@@ -9,8 +9,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Features", href: "/features" },
-  { label: "Docs", href: "/docs" },
-  
+  { label: "Docs", href: "https://avenue.mintlify.app", external: true },
 ];
 
 export function Navbar() {
@@ -27,7 +26,7 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-4 md:px-8",
           scrolled ? "py-2" : "py-4"
         )}
       >
@@ -50,6 +49,8 @@ export function Navbar() {
               <li key={link.label}>
                 <Link
                   href={link.href}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
                   className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#059669] hover:bg-[#10b981]/10 rounded-full transition-all duration-300"
                 >
                   {link.label}
@@ -100,7 +101,9 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  onClick={() => setOpen(false)}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
+                  onClick={() => !link.external && setOpen(false)}
                   className="px-4 py-3.5 text-base font-medium text-gray-800 hover:text-[#059669] hover:bg-[#10b981]/10 rounded-xl transition-colors"
                 >
                   {link.label}
