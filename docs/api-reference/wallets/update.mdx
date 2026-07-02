@@ -1,0 +1,39 @@
+---
+title: 'Update Wallet'
+api: 'PATCH /v1/wallets/:wallet_id'
+description: 'Update the metadata or system prompt for an existing wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+
+## Request Body
+
+<ParamField body="label" type="string">
+  The new human-readable label.
+</ParamField>
+<ParamField body="system_prompt" type="string">
+  The updated AI instructions.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "wallet_id": "wal_abc123",
+  "label": "Updated Label",
+  "system_prompt": "New system prompt",
+  "status": "success"
+}
+```
+</ResponseExample>

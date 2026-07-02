@@ -136,6 +136,9 @@ Developer registers their own app URL in Avenue (outbound)
 ```json
 {
   "customer_reference": "user_987",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
   "label": "John Doe — School Fees",
   "currency": "NGN",
   "system_prompt": "This wallet collects school fees. Expected amount: 50,000 NGN per term. Flag anything under 50,000 as an underpayment."
@@ -146,6 +149,9 @@ Developer registers their own app URL in Avenue (outbound)
 {
   "wallet_id": "wal_abc123",
   "customer_reference": "user_987",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
   "label": "John Doe — School Fees",
   "account_number": "2211334455",
   "bank_name": "Nomba MFB",
@@ -429,6 +435,9 @@ Developer registers their own app URL in Avenue (outbound)
 | `id` | UUID | PK | |
 | `developer_id` | UUID | FK → developers | |
 | `customer_reference` | VARCHAR(255) | NOT NULL | Developer's user ID |
+| `first_name` | VARCHAR(100) | NOT NULL | User's first name |
+| `last_name` | VARCHAR(100) | NOT NULL | User's last name |
+| `email` | VARCHAR(255) | NOT NULL | User's email |
 | `label` | VARCHAR(255) | | Human-readable wallet name |
 | `nomba_account_id` | TEXT | UNIQUE, NOT NULL | Nomba's internal virtual account ID |
 | `account_number` | VARCHAR(20) | UNIQUE, NOT NULL | The NUBAN |

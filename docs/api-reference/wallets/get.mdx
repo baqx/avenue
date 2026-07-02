@@ -1,0 +1,36 @@
+---
+title: 'Get Wallet Details'
+api: 'GET /v1/wallets/:wallet_id'
+description: 'Retrieve full details for a specific wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "wallet_id": "wal_abc123",
+  "customer_reference": "user_987",
+  "label": "John Doe — School Fees",
+  "account_number": "2211334455",
+  "bank_name": "Nomba MFB",
+  "balance": 1500000,
+  "status": "ACTIVE",
+  "system_prompt": "This wallet collects school fees...",
+  "agents_count": 2,
+  "created_at": "2026-07-01T11:00:00Z"
+}
+```
+</ResponseExample>

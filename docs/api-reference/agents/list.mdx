@@ -1,0 +1,37 @@
+---
+title: 'List Agents'
+api: 'GET /v1/agents'
+description: 'List all agents globally across all wallets.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="wallet_id" type="string">
+  Filter agents attached to a specific wallet.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "agent_id": "agt_987",
+      "wallet_id": "wal_abc123",
+      "name": "Auto-Sweep on Full Payment",
+      "trigger": "BALANCE_ABOVE",
+      "action": "SWEEP",
+      "is_active": true,
+      "trigger_count": 4
+    }
+  ]
+}
+```
+</ResponseExample>

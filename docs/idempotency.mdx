@@ -1,0 +1,36 @@
+---
+title: Idempotency
+description: How Avenue prevents double-crediting, even under race conditions.
+---
+
+# Idempotency
+
+Nomba can fire the same webhook event more than once — due to network retries, timeouts, or infrastructure blips. Avenue's idempotency layer ensures that no payment is ever credited twice, regardless of how many times the event arrives.
+
+## How it works
+
+Every Nomba webhook contains a unique `nomba_reference` field — a transaction identifier that Nomba guarantees is unique per payment.
+
+When Avenue receives an inbound event, it attempts to insert a new ledger entry with that `nomba_reference`. The database has a **UNIQUE constraint** on this column. If a duplicate arrives:
+
+- The INSERT fails at the database level
+- Avenue returns a `200 OK` to Nomba (so Nomba doesn't keep retrying)
+- No second credit is recorded
+- The duplicate is silently discarded
+
+<Note>
+  This is enforced **at the database level** — not in application code. This means it is impossible to double-credit even under parallel requests, race conditions, or application restarts.
+</Note>
+
+## Why not use a Redis lock?
+
+An in-memory lock would work most of the time, but it can fail:
+- If the process crashes after acquiring the lock
+- If two instances receive the event simultaneously before the lock is set
+- During cache eviction
+
+A database UNIQUE constraint is **transactional and atomic**. It cannot fail in the same ways.
+
+## What happens to duplicates?
+
+The duplicate request is logged internally but no action is taken. Your outbound webhook is **not** fired again for the duplicate — your app will only ever receive one `ledger.credit` event per payment.

@@ -1,0 +1,108 @@
+---
+title: Webhooks
+description: How Avenue receives Nomba events and dispatches enriched events to your app.
+---
+
+# Webhooks
+
+Avenue has two webhook directions: **inbound** (Nomba → Avenue) and **outbound** (Avenue → your app).
+
+## Inbound — Nomba to Avenue
+
+Avenue gives you a unique inbound URL per developer:
+
+```
+https://api.avenue.so/v1/webhooks/inbound/dev_xxxx
+```
+
+Paste this into your Nomba dashboard. Every payment event Nomba fires will be received, validated, and processed by Avenue.
+
+### What Avenue does with an inbound event
+
+1. **Validates the HMAC-SHA256 signature** using your stored Nomba secret
+2. **Idempotency check** — rejects duplicates via DB unique constraint on `nomba_reference`
+3. **Identifies the target wallet** by matching the destination account number
+4. **AI reconciliation** — passes raw narration through the AI engine
+5. **Updates the double-entry ledger** — immutable credit entry added
+6. **Evaluates agent triggers** — any matching agents are executed
+7. **Queues the outbound event** — fires to your registered webhook URL
+
+## Outbound — Avenue to your app
+
+Register your outbound URL via the API or dashboard:
+
+```bash
+curl -X PUT https://api.avenue.so/v1/developers/webhook \
+  -H "x-api-key: ave_live_xxxx" \
+  -d '{ "url": "https://yourapp.io/avenue-events" }'
+```
+
+### Payload format
+
+```json
+{
+  "event_type": "ledger.credit",
+  "api_version": "2024-01-01",
+  "developer_id": "dev_xxxx",
+  "created_at": "2024-12-01T10:30:00Z",
+  "data": {
+    "wallet_id": "wal_abc123",
+    "customer_reference": "user_182",
+    "amount": 150000,
+    "balance_after": 150000,
+    "nomba_reference": "NMB20241201ABC",
+    "sender_name": "JOHN ADEWALE OKAFOR",
+    "raw_narration": "TRF FROM JOHN ADEWALE/School fees SS2",
+    "avenue_intelligence": {
+      "extracted_intent": "School fees payment for SS2 second term",
+      "confidence_score": 0.94,
+      "suggested_label": "School Fees – SS2 Term 2",
+      "flags": []
+    }
+  }
+}
+```
+
+### Event types
+
+| Event | Description |
+|---|---|
+| `ledger.credit` | A wallet was successfully credited |
+| `suspense.created` | A payment could not be automatically credited |
+| `agent.executed` | An account agent trigger fired |
+| `webhook.test` | A test event sent from the dashboard |
+
+## Signature verification
+
+Every outbound event is signed with HMAC-SHA256. Verify it in your app:
+
+```javascript
+const crypto = require('crypto');
+
+function verifyAvenueSignature(rawBody, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+```
+
+The signature is sent in the `x-avenue-signature` header.
+
+## Retry behaviour
+
+If your endpoint returns a non-2xx response, Avenue retries with exponential backoff:
+
+| Attempt | Delay |
+|---|---|
+| 1 | Immediate |
+| 2 | 30 seconds |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+
+After 5 failed attempts, the delivery is marked `DEAD`. You can manually retry from the **Webhooks → Logs** dashboard or via the API.

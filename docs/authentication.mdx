@@ -1,0 +1,47 @@
+---
+title: Authentication
+description: API keys, test vs. live mode, and how to authenticate your requests.
+---
+
+# Authentication
+
+Avenue uses API key authentication. Every non-auth request must include your API key in the `x-api-key` header.
+
+## API Key types
+
+| Key prefix | Mode | Description |
+|---|---|---|
+| `ave_live_` | Live | Real money moves. Use in production. |
+| `ave_test_` | Test | Sandbox mode. No real money moves. Webhooks are still fired for testing. |
+
+Both keys are generated automatically when you verify your email. Access them in **Settings → API Keys**.
+
+## Making authenticated requests
+
+```bash
+curl https://api.avenue.so/v1/wallets \
+  -H "x-api-key: ave_live_xxxx"
+```
+
+<Warning>
+  Never expose your live API key in client-side code, mobile apps, or public repositories. Use environment variables and server-side requests only.
+</Warning>
+
+## Generating a new API key
+
+You can rotate your API key at any time from **Settings → API Keys**. The old key is immediately invalidated.
+
+## Error responses
+
+If your API key is missing or invalid, Avenue returns:
+
+```json
+{
+  "detail": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing API key."
+  }
+}
+```
+
+**HTTP status:** `401 Unauthorized`

@@ -1,0 +1,67 @@
+---
+title: Suspense Engine
+description: How Avenue handles anomalous payments — safely and transparently.
+---
+
+# Suspense Engine
+
+The suspense engine is Avenue's safety net. When a payment can't be automatically credited — because the wallet doesn't exist, it's closed, or the AI isn't confident enough — the money doesn't disappear. It goes into the suspense queue.
+
+## When does a payment go to suspense?
+
+| Reason | Description |
+|---|---|
+| `NO_WALLET_FOUND` | The destination NUBAN doesn't match any wallet in your account |
+| `WALLET_CLOSED` | The target wallet has been permanently closed |
+| `AI_LOW_CONFIDENCE` | AI confidence score was below the configured threshold |
+
+## What is stored
+
+A `SuspenseItem` preserves the complete original Nomba payload:
+
+- Full raw webhook body
+- Amount (in kobo)
+- Sender name
+- Raw narration
+- Nomba reference
+- Reason for suspense
+
+Nothing is lost.
+
+## Resolving a suspense item
+
+From the dashboard (**Suspense** tab) or via the API:
+
+```bash
+POST /v1/suspense/:id/resolve
+{
+  "action": "CREDIT_WALLET",
+  "target_wallet_id": "wal_abc123",
+  "note": "School fees — confirmed by ops team"
+}
+```
+
+| Action | Description |
+|---|---|
+| `CREDIT_WALLET` | Credits the specified wallet with the held amount |
+| `DISMISS` | Marks as resolved without crediting |
+
+## Flagging
+
+Items can also be flagged for review:
+
+```bash
+POST /v1/suspense/:id/flag
+{ "note": "Potential fraud — referred to compliance" }
+```
+
+## Suspense lifecycle
+
+```
+PENDING → RESOLVED  (via resolve action)
+PENDING → FLAGGED   (via flag action)
+```
+
+<Note>
+  Suspense items are visible in your dashboard analytics. A high suspense rate may indicate your wallet system_prompts need improvement, or that users are transferring to incorrect accounts.
+</Note>

@@ -1,0 +1,141 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Avenue",
+  "colors": {
+    "primary": "#082938",
+    "light": "#6cc7ff",
+    "dark": "#082938"
+  },
+  "favicon": "/favicon.ico",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/wallets-and-nubans",
+              "concepts/the-ledger",
+              "concepts/ai-reconciliation",
+              "concepts/agents",
+              "concepts/suspense-engine"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "webhooks",
+              "idempotency"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              {
+                "group": "Auth",
+                "pages": [
+                  "api-reference/auth/signup",
+                  "api-reference/auth/login"
+                ]
+              },
+              {
+                "group": "Wallets",
+                "pages": [
+                  "api-reference/wallets/create",
+                  "api-reference/wallets/list",
+                  "api-reference/wallets/get",
+                  "api-reference/wallets/update",
+                  "api-reference/wallets/freeze",
+                  "api-reference/wallets/close"
+                ]
+              },
+              {
+                "group": "Transactions",
+                "pages": [
+                  "api-reference/transactions/list",
+                  "api-reference/transactions/get",
+                  "api-reference/transactions/statement"
+                ]
+              },
+              {
+                "group": "Agents",
+                "pages": [
+                  "api-reference/agents/create",
+                  "api-reference/agents/list",
+                  "api-reference/agents/toggle"
+                ]
+              },
+              {
+                "group": "Suspense",
+                "pages": [
+                  "api-reference/suspense/list",
+                  "api-reference/suspense/resolve"
+                ]
+              },
+              {
+                "group": "Webhook Logs",
+                "pages": [
+                  "api-reference/webhook-logs/list",
+                  "api-reference/webhook-logs/retry"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/avenue-light.svg",
+    "dark": "/logo/avenue-dark.svg"
+  },
+  "api": {
+    "mdx": {
+      "server": "https://api.avenue.so",
+      "auth": {
+        "method": "key",
+        "name": "x-api-key"
+      }
+    }
+  },
+  "background": {
+    "color": {
+      "light": "#ffffff",
+      "dark": "#061c28"
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://dashboard.avenue.so"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get started free",
+      "href": "https://avenue.so/signup"
+    }
+  },
+  "footer": {
+    "socials": {
+      "twitter": "https://twitter.com/avenueso",
+      "github": "https://github.com/baqx/avenue"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+---
+title: AI Reconciliation
+description: How Avenue's AI engine extracts structured intent from raw bank narrations.
+---
+
+# AI Reconciliation Engine
+
+Raw bank narrations are notoriously unstructured. A payment meant for "School fees for JSS3 second term" might arrive with the narration `TRF FROM JOHN ADEWALE/fees`. Avenue's AI engine transforms these raw strings into structured, actionable data.
+
+## How it works
+
+When a payment arrives at a wallet, Avenue passes two things to GPT-4o:
+
+1. The **raw narration** from Nomba (`raw_narration`)
+2. The **wallet's system_prompt** — a description of the wallet's purpose that you set at creation time
+
+The AI returns a structured JSON object:
+
+```json
+{
+  "extracted_intent": "School fees payment for SS2 second term",
+  "confidence_score": 0.94,
+  "suggested_label": "School Fees – SS2 Term 2",
+  "flags": []
+}
+```
+
+## Confidence score
+
+The confidence score (0.0 to 1.0) reflects how certain the AI is about its intent extraction.
+
+| Score range | Meaning | Action |
+|---|---|---|
+| `≥ 0.75` | High confidence | Credit proceeds normally |
+| `< 0.75` | Low confidence | Payment routed to suspense queue |
+
+The threshold (`0.75` by default) is configurable via your environment variable `AI_CONFIDENCE_THRESHOLD`.
+
+## Flags
+
+The AI can set flags on a transaction:
+
+| Flag | Meaning |
+|---|---|
+| `UNDERPAYMENT` | Amount is less than what the context suggests was expected |
+| `MISDIRECTION` | Narration suggests this payment may be intended for a different wallet |
+| `UNCLEAR_INTENT` | AI could not reliably determine what the payment is for |
+
+Flags are surfaced in the `avenue_intelligence` object in your webhook payload and on the transaction detail page.
+
+## Fallback: Suspense
+
+If the confidence score is below threshold, or the AI call fails, the payment does **not** get credited to the wallet. Instead, a `SuspenseItem` is created with:
+- The full raw Nomba payload
+- The reason (`AI_LOW_CONFIDENCE`)
+- The original amount
+
+You can resolve it manually from the dashboard: credit it to the correct wallet or dismiss it.

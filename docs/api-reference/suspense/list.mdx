@@ -1,0 +1,38 @@
+---
+title: 'List Suspense Items'
+api: 'GET /v1/suspense'
+description: 'List all items caught by the Suspense Engine awaiting manual resolution.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="status" type="string">
+  Filter by `PENDING`, `RESOLVED`, or `FLAGGED`.
+</ParamField>
+<ParamField query="reason" type="string">
+  Filter by reason (e.g. `WALLET_CLOSED`, `AI_LOW_CONFIDENCE`).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "suspense_id": "susp_112",
+      "account_number": "2211334455",
+      "amount": 50000,
+      "reason": "AI_LOW_CONFIDENCE",
+      "status": "PENDING"
+    }
+  ]
+}
+```
+</ResponseExample>

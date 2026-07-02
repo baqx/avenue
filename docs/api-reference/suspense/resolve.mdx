@@ -1,0 +1,40 @@
+---
+title: 'Resolve Suspense Item'
+api: 'POST /v1/suspense/:suspense_id/resolve'
+description: 'Manually resolve an anomalous payment by routing it to a wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="suspense_id" type="string" required>
+  The suspense item ID.
+</ParamField>
+
+## Request Body
+
+<ParamField body="action" type="string" required>
+  `CREDIT_WALLET` or `DISMISS`.
+</ParamField>
+<ParamField body="target_wallet_id" type="string">
+  The wallet to credit (required if action is `CREDIT_WALLET`).
+</ParamField>
+<ParamField body="note" type="string">
+  Manual resolution note.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Item resolved and wallet credited."
+}
+```
+</ResponseExample>

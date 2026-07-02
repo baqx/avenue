@@ -1,0 +1,29 @@
+---
+title: 'Retry Webhook'
+api: 'POST /v1/webhook-logs/:log_id/retry'
+description: 'Manually trigger a retry for a failed outbound webhook delivery.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="log_id" type="string" required>
+  The webhook log ID.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "log_id": "log_001",
+  "status": "PENDING",
+  "message": "Retry queued successfully."
+}
+```
+</ResponseExample>

@@ -1,0 +1,36 @@
+---
+title: 'Get Statement'
+api: 'GET /v1/wallets/:wallet_id/statement'
+description: 'Retrieve a chronological statement (credits and debits) for a specific wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "date": "2026-07-01T12:00:00Z",
+      "type": "CREDIT",
+      "amount": 25000,
+      "running_balance": 50000,
+      "narration": "Transfer from Emeka"
+    }
+  ],
+  "meta": { "page": 1, "total": 12 }
+}
+```
+</ResponseExample>

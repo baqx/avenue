@@ -1,0 +1,48 @@
+---
+title: 'Create Agent'
+api: 'POST /v1/wallets/:wallet_id/agents'
+description: 'Attach an automated trigger-action rule to a specific wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  A descriptive name for the agent (e.g. `Auto-Sweep`).
+</ParamField>
+<ParamField body="trigger" type="string" required>
+  The condition: `BALANCE_ABOVE`, `BALANCE_BELOW`, `ON_CREDIT`, or `ON_CREDIT_AMOUNT_ABOVE`.
+</ParamField>
+<ParamField body="threshold" type="integer">
+  The amount in kobo that fires the trigger (if applicable).
+</ParamField>
+<ParamField body="action" type="string" required>
+  What the agent does: `SWEEP`, `PARTIAL_SWEEP`, `WEBHOOK_NOTIFY`, `LOCK_WALLET`.
+</ParamField>
+<ParamField body="destination_wallet_id" type="string">
+  The wallet to receive funds (required for SWEEP actions).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "agent_id": "agt_987",
+  "name": "Auto-Sweep on Full Payment",
+  "trigger": "BALANCE_ABOVE",
+  "status": "ACTIVE"
+}
+```
+</ResponseExample>

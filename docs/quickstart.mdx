@@ -1,0 +1,102 @@
+---
+title: Quickstart
+description: Go from zero to a live enriched payment event in under 5 minutes.
+---
+
+# Quickstart
+
+This guide walks you through the full Avenue flow from account creation to receiving your first enriched webhook event.
+
+## Step 1: Sign up
+
+Create a developer account at [avenue.so/signup](https://avenue.so/signup). You'll receive a verification email — click the link to activate your account.
+
+Upon verification, two API keys are automatically generated:
+- `ave_live_xxxxxxxxxx` — for production
+- `ave_test_xxxxxxxxxx` — for testing (no real money moves)
+
+## Step 2: Connect your Nomba account
+
+Go to **Settings → Nomba Integration** in your dashboard and paste your Nomba `client_id` and `client_secret`. Avenue uses these to provision NUBANs and initiate transfers on your behalf.
+
+## Step 3: Set your inbound webhook URL in Nomba
+
+Avenue generates a unique inbound URL per developer:
+
+```
+https://api.avenue.so/v1/webhooks/inbound/dev_xxxx
+```
+
+Paste this into your Nomba dashboard as the webhook destination. All Nomba payment events will now flow through Avenue.
+
+## Step 4: Create your first wallet
+
+```bash
+curl -X POST https://api.avenue.so/v1/wallets \
+  -H "x-api-key: ave_live_xxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_reference": "user_182",
+    "system_prompt": "School fees collection wallet for Adewale Okafor, JSS3"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "wal_abc123",
+  "nuban": "0123456789",
+  "bank_name": "Nomba Microfinance Bank",
+  "status": "ACTIVE",
+  "customer_reference": "user_182",
+  "balance_kobo": 0
+}
+```
+
+Share the `nuban` with your user. They can now receive money at this account number.
+
+## Step 5: Register your outbound webhook URL
+
+Tell Avenue where to send enriched events after processing:
+
+```bash
+curl -X PUT https://api.avenue.so/v1/developers/webhook \
+  -H "x-api-key: ave_live_xxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "url": "https://yourapp.io/avenue-events" }'
+```
+
+## Step 6: Receive an enriched event
+
+When someone pays the NUBAN, your endpoint will receive:
+
+```json
+{
+  "event_type": "ledger.credit",
+  "api_version": "2024-01-01",
+  "developer_id": "dev_xxxx",
+  "data": {
+    "wallet_id": "wal_abc123",
+    "customer_reference": "user_182",
+    "amount": 150000,
+    "balance_after": 150000,
+    "nomba_reference": "NMB20241201ABC",
+    "sender_name": "JOHN ADEWALE OKAFOR",
+    "raw_narration": "TRF FROM JOHN ADEWALE/School fees SS2 term2",
+    "avenue_intelligence": {
+      "extracted_intent": "School fees payment for SS2 second term",
+      "confidence_score": 0.94,
+      "suggested_label": "School Fees – SS2 Term 2",
+      "flags": []
+    }
+  }
+}
+```
+
+<Note>
+  All amounts are in **kobo** (integer). Divide by 100 to get Naira. This eliminates all floating-point rounding errors.
+</Note>
+
+## You're live 🎉
+
+Your payment pipeline is active. Explore the rest of the docs to learn about [agents](/concepts/agents), [suspense handling](/concepts/suspense-engine), and the full [API reference](/api-reference/wallets/create).

@@ -1,0 +1,60 @@
+---
+title: The Ledger
+description: How Avenue's double-entry ledger works and why it guarantees correctness.
+---
+
+# The Double-Entry Ledger
+
+Avenue maintains an **immutable double-entry ledger** for every wallet. This is the source of truth for all balances and transaction history.
+
+## Core principles
+
+### 1. Append-only
+
+Ledger entries are never updated or deleted. Every credit and debit is a new row. This provides a complete, tamper-evident audit trail from wallet creation to today.
+
+### 2. Balances are derived, not stored
+
+```
+balance = SUM(amount WHERE type='CREDIT') - SUM(amount WHERE type='DEBIT')
+```
+
+There is no `balance` column that gets updated on every transaction. The balance is always computed from the ledger entries. This eliminates an entire class of bugs where a balance update fails mid-transaction and the stored value becomes incorrect.
+
+### 3. Amounts in kobo
+
+All amounts are stored as integers in kobo (100 kobo = ₦1). There is no floating-point arithmetic anywhere in the system. `₦1,500.00` is stored as `150000`.
+
+## Entry structure
+
+| Field | Description |
+|---|---|
+| `id` | UUID |
+| `wallet_id` | Which wallet |
+| `developer_id` | Which developer |
+| `type` | `CREDIT` or `DEBIT` |
+| `amount` | In kobo (always positive) |
+| `nomba_reference` | Unique Nomba transaction ID (UNIQUE constraint) |
+| `sender_name` | Extracted from Nomba payload |
+| `raw_narration` | Verbatim from Nomba |
+| `ai_metadata` | JSON blob from AI engine |
+| `created_at` | Timestamp |
+
+## Idempotency via UNIQUE constraint
+
+The `nomba_reference` column has a database-level UNIQUE constraint. If Avenue receives the same Nomba webhook twice, the second INSERT fails silently — no double-credit, no error to your app.
+
+## Reading the ledger
+
+Use the transactions API to retrieve ledger entries:
+
+```bash
+GET /v1/wallets/:id/transactions
+GET /v1/wallets/:id/statement
+```
+
+Or retrieve the global transaction log across all wallets:
+
+```bash
+GET /v1/transactions
+```

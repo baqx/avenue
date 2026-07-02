@@ -1,0 +1,38 @@
+---
+title: 'Toggle Agent'
+api: 'PATCH /v1/wallets/:wallet_id/agents/:agent_id/toggle'
+description: 'Enable or disable an agent without deleting it.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+<ParamField path="agent_id" type="string" required>
+  The agent ID.
+</ParamField>
+
+## Request Body
+
+<ParamField body="is_active" type="boolean" required>
+  True to enable, false to disable.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "agent_id": "agt_987",
+  "is_active": false,
+  "message": "Agent has been disabled."
+}
+```
+</ResponseExample>

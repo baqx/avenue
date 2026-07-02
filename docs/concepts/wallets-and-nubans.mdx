@@ -1,0 +1,49 @@
+---
+title: Wallets & NUBANs
+description: How Avenue virtual accounts work and how they map to Nomba NUBANs.
+---
+
+# Wallets & NUBANs
+
+A **wallet** in Avenue is a record that ties a **NUBAN virtual account** (provisioned on Nomba) to a specific user in your system, a double-entry ledger, an AI context prompt, and optional automation agents.
+
+## What is a NUBAN?
+
+A NUBAN (Nigeria Uniform Bank Account Number) is a 10-digit bank account number. Anyone in Nigeria can transfer money to it via their banking app, USSD, or ATM — using standard bank transfer rails.
+
+Avenue provisions NUBANs through Nomba Microfinance Bank on your behalf. When a wallet is created, Avenue calls the Nomba API to generate the NUBAN and stores the association in its database.
+
+## Wallet lifecycle
+
+```
+ACTIVE → FROZEN → ACTIVE  (freeze/unfreeze)
+ACTIVE → CLOSED           (permanent, irreversible)
+```
+
+| Status | Behaviour |
+|---|---|
+| `ACTIVE` | Receives credits normally. AI and agents run. |
+| `FROZEN` | Incoming payments go to suspense queue. API returns wallet data. |
+| `CLOSED` | Permanently inactive. Incoming payments go to suspense queue. |
+
+## The system_prompt field
+
+Each wallet has a `system_prompt` — a natural language description of the wallet's purpose that Avenue feeds to the AI engine when reconciling narrations.
+
+```json
+{
+  "system_prompt": "School fees collection wallet for Adewale Okafor, class JSS3"
+}
+```
+
+A well-crafted system prompt dramatically improves reconciliation accuracy. If a narration says "fees for third term", the AI knows the context and can produce a confident, labelled output.
+
+## Balance calculation
+
+Avenue **never stores a balance as a mutable field**. A wallet's balance is always computed at query time by summing its ledger entries:
+
+```
+balance = SUM(credits) - SUM(debits)
+```
+
+This guarantees mathematical correctness and provides a complete audit trail.

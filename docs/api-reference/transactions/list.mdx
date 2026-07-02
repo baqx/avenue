@@ -1,0 +1,49 @@
+---
+title: 'List Transactions'
+api: 'GET /v1/transactions'
+description: 'List all double-entry ledger transactions across all wallets.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="wallet_id" type="string">
+  Filter transactions for a specific wallet.
+</ParamField>
+<ParamField query="type" type="string">
+  Filter by `CREDIT` or `DEBIT`.
+</ParamField>
+<ParamField query="flag" type="string">
+  Filter by AI-generated flags (e.g. `UNDERPAYMENT_DETECTED`).
+</ParamField>
+<ParamField query="page" type="integer" default="1">
+  The page number to retrieve.
+</ParamField>
+<ParamField query="limit" type="integer" default="20">
+  Number of results per page (max 100).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "transaction_id": "tx_xyz999",
+      "wallet_id": "wal_abc123",
+      "type": "CREDIT",
+      "amount": 25000,
+      "balance_after": 25000,
+      "created_at": "2026-07-01T12:00:00Z"
+    }
+  ],
+  "meta": { "page": 1, "total": 1250 }
+}
+```
+</ResponseExample>

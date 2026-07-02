@@ -1,0 +1,47 @@
+---
+title: Introduction
+description: What is Avenue and why does it exist?
+---
+
+# Welcome to Avenue
+
+Avenue is an intelligent **Wallet-as-a-Service** layer built on top of [Nomba](https://nomba.com). It gives developers a clean API to create dedicated virtual bank accounts (NUBANs) for their users, automatically reconcile incoming payments using AI, automate actions via account agents, and receive structured webhook events — without writing any of the infrastructure glue code themselves.
+
+## What problem does Avenue solve?
+
+When you build a product on Nomba directly, you get:
+- Raw virtual accounts (NUBANs) ✅
+- Raw payment webhooks with unstructured narrations ✅
+- No reconciliation logic ❌
+- No ledger ❌
+- No anomaly handling ❌
+- No automation layer ❌
+
+Avenue sits between your product and Nomba and adds all of that.
+
+## Core capabilities
+
+<CardGroup cols={2}>
+  <Card title="Smart Wallets" icon="wallet" href="/concepts/wallets-and-nubans">
+    Create a dedicated NUBAN virtual account per user with one API call.
+  </Card>
+  <Card title="AI Reconciliation" icon="sparkles" href="/concepts/ai-reconciliation">
+    Avenue's AI engine parses every bank narration and extracts structured intent.
+  </Card>
+  <Card title="Account Agents" icon="robot" href="/concepts/agents">
+    Trigger-action rules that run automatically when payment conditions are met.
+  </Card>
+  <Card title="Suspense Engine" icon="shield" href="/concepts/suspense-engine">
+    Anomalous payments are held safely — never lost, always resolvable.
+  </Card>
+</CardGroup>
+
+## How it works (in one paragraph)
+
+When a user transfers money to their NUBAN, Nomba fires a webhook to Avenue. Avenue validates the HMAC signature, checks for duplicates, identifies the target wallet, passes the narration through an AI engine, updates an immutable double-entry ledger, evaluates any automation agents, and fires a clean, enriched webhook to your app — all in under 500ms.
+
+## Next steps
+
+<Card title="Quickstart — live in 5 minutes" icon="rocket" href="/quickstart">
+  Sign up, get API keys, create your first wallet, and receive your first enriched event.
+</Card>

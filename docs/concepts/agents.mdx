@@ -1,0 +1,61 @@
+---
+title: Account Agents
+description: Trigger-action automations that run on your wallets automatically.
+---
+
+# Account Agents
+
+Agents are programmable trigger-action rules attached to individual wallets. When a trigger condition is met, Avenue executes the associated action automatically — no polling required.
+
+## Agent anatomy
+
+An agent has three components:
+
+| Field | Description |
+|---|---|
+| `trigger` | The event that activates the agent |
+| `trigger_value` | Threshold amount (in kobo) for balance-based triggers |
+| `action` | What to do when the trigger fires |
+| `destination_wallet_id` | Required for SWEEP / PARTIAL_SWEEP actions |
+| `sweep_amount_kobo` | For PARTIAL_SWEEP: how much to move |
+
+## Triggers
+
+| Trigger | Fires when |
+|---|---|
+| `ON_CREDIT` | Any credit lands on the wallet |
+| `BALANCE_ABOVE` | Wallet balance exceeds `trigger_value` |
+| `BALANCE_BELOW` | Wallet balance drops below `trigger_value` |
+
+## Actions
+
+| Action | Behaviour |
+|---|---|
+| `SWEEP` | Moves the entire wallet balance to `destination_wallet_id` |
+| `PARTIAL_SWEEP` | Moves `sweep_amount_kobo` to `destination_wallet_id` |
+| `LOCK_WALLET` | Freezes the wallet immediately |
+| `WEBHOOK_NOTIFY` | Fires a `agent.executed` event to your webhook URL |
+
+## Example: Auto-sweep on credit
+
+```bash
+curl -X POST https://api.avenue.so/v1/wallets/wal_abc123/agents \
+  -H "x-api-key: ave_live_xxxx" \
+  -d '{
+    "trigger": "ON_CREDIT",
+    "action": "SWEEP",
+    "destination_wallet_id": "wal_main_pool"
+  }'
+```
+
+Every time money lands on `wal_abc123`, it is automatically swept to `wal_main_pool`.
+
+## Agent logs
+
+Every agent execution is recorded in `agent_logs`:
+- When it fired
+- Which trigger was met
+- What action was taken
+- Whether it succeeded
+
+View execution history per agent in the dashboard or via `GET /v1/agents/:id/logs`.

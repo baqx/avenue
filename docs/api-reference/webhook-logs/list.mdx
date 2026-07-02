@@ -1,0 +1,38 @@
+---
+title: 'List Webhook Logs'
+api: 'GET /v1/webhook-logs'
+description: 'List all outbound webhook delivery attempts from Avenue to your application.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="status" type="string">
+  Filter by `DELIVERED`, `FAILED`, `PENDING`, `DEAD`.
+</ParamField>
+<ParamField query="event_type" type="string">
+  Filter by event (e.g. `ledger.credit`).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "log_id": "log_001",
+      "event_type": "ledger.credit",
+      "status": "DELIVERED",
+      "http_status_code": 200,
+      "created_at": "2026-07-01T12:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
