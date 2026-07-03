@@ -103,8 +103,8 @@ Developer registers their own app URL in Avenue (outbound)
 | `GET` | `/v1/developers/me/keys` | List all API keys (live + test, masked) |
 | `POST` | `/v1/developers/me/keys` | Generate a new API key with a label |
 | `DELETE` | `/v1/developers/me/keys/:key_id` | Revoke/delete an API key |
-| `POST` | `/v1/developers/me/nomba-config` | Save Nomba `client_id` + `client_secret` (encrypted at rest) |
-| `GET` | `/v1/developers/me/nomba-config` | View connected Nomba config (client_id shown, secret masked) |
+| `POST` | `/v1/developers/me/nomba-config` | Save Nomba `account_id`, `client_id`, `client_secret` (encrypted at rest), and `webhook_signature_key` |
+| `GET` | `/v1/developers/me/nomba-config` | View connected Nomba config (`account_id` and `client_id` shown, secret masked) |
 | `DELETE` | `/v1/developers/me/nomba-config` | Remove Nomba credentials |
 | `GET` | `/v1/developers/me/inbound-webhook-url` | Get the unique Nomba-facing inbound URL for this developer |
 | `POST` | `/v1/developers/me/outbound-webhook` | Set/update the developer's outbound webhook URL + optional signing secret |
@@ -293,7 +293,7 @@ Developer registers their own app URL in Avenue (outbound)
 | `POST` | `/v1/webhooks/inbound/:developer_id` | Developer-specific Nomba webhook receiver |
 
 **Internal Processing Pipeline (sequential, atomic):**
-1. Validate Nomba HMAC-SHA512 signature against stored `inbound_webhook_token`
+1. Validate Nomba HMAC-SHA256 signature against stored `webhook_signature_key`
 2. Parse and log the raw payload
 3. Idempotency check — if `nomba_reference` exists in `ledger_entries`, return `200 OK` immediately (silent skip)
 4. Look up target wallet by `account_number` — if not found, route to Suspense (`NO_WALLET_FOUND`)
@@ -412,9 +412,10 @@ Developer registers their own app URL in Avenue (outbound)
 |--------|------|-------------|-------|
 | `id` | UUID | PK | |
 | `developer_id` | UUID | FK → developers, UNIQUE | One config per developer |
+| `account_id` | VARCHAR(64) | NOT NULL | Nomba parent account ID |
 | `client_id` | TEXT | NOT NULL | Stored in plaintext (safe) |
 | `encrypted_client_secret` | TEXT | NOT NULL | AES-256 encrypted |
-| `inbound_webhook_token` | TEXT | NOT NULL | Used to verify Nomba HMAC signatures |
+| `webhook_signature_key` | VARCHAR(255) | NOT NULL | Key from Nomba dashboard to verify HMAC signatures |
 | `created_at` | TIMESTAMPTZ | DEFAULT now() | |
 | `updated_at` | TIMESTAMPTZ | | |
 
@@ -735,7 +736,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/avenue_db
 REDIS_URL=redis://localhost:6379
 
 # ── Nomba ─────────────────────────────────────────
-NOMBA_BASE_URL=https://api.nomba.com/v1
+NOMBA_BASE_URL=https://api.nomba.com
 
 # ── AI Engine ─────────────────────────────────────
 OPENAI_API_KEY=sk-...

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
 
     # Nomba
-    NOMBA_BASE_URL: str = "https://api.nomba.com/v1"
+    NOMBA_BASE_URL: str = "https://api.nomba.com"
 
     # AI Engine
     OPENAI_API_KEY: str

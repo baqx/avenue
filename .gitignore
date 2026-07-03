@@ -78,6 +78,9 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+#TODO file
+TODO.md
+
 # IPython
 profile_default/
 ipython_config.py

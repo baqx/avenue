@@ -59,9 +59,35 @@ def hash_api_key(api_key: str) -> str:
 
 
 # ── HMAC Signature Verification ───────────────────────────────────────────────
-def verify_hmac_signature(payload: bytes, signature: str, secret: str) -> bool:
-    """Verify Nomba HMAC-SHA512 webhook signature."""
-    expected = hmac.new(secret.encode(), payload, hashlib.sha512).hexdigest()
+def verify_nomba_signature(payload: dict, signature: str, secret: str, timestamp: str) -> bool:
+    """
+    Verify Nomba webhook signature.
+    Nomba uses HMAC-SHA256 on a structured string of specific fields, Base64-encoded.
+    The structured payload format:
+        {event_type}:{requestId}:{userId}:{walletId}:{transactionId}:{type}:{time}:{responseCode}:{timestamp}
+    """
+    data = payload.get("data", {})
+    merchant = data.get("merchant", {})
+    transaction = data.get("transaction", {})
+
+    event_type = payload.get("event_type", "")
+    request_id = payload.get("requestId", "")
+    user_id = merchant.get("userId", "")
+    wallet_id = merchant.get("walletId", "")
+    transaction_id = transaction.get("transactionId", "")
+    transaction_type = transaction.get("type", "")
+    transaction_time = transaction.get("time", "")
+    response_code = transaction.get("responseCode", "")
+
+    if response_code == "null":
+        response_code = ""
+
+    hashing_payload = f"{event_type}:{request_id}:{user_id}:{wallet_id}:{transaction_id}:{transaction_type}:{transaction_time}:{response_code}:{timestamp}"
+
+    import base64
+    digest = hmac.new(secret.encode(), hashing_payload.encode(), hashlib.sha256).digest()
+    expected = base64.b64encode(digest).decode()
+
     return hmac.compare_digest(expected, signature)
 
 
@@ -69,9 +95,3 @@ def verify_hmac_signature(payload: bytes, signature: str, secret: str) -> bool:
 def sign_outbound_webhook(payload: bytes, secret: str) -> str:
     """Sign an outbound Avenue webhook payload using HMAC-SHA256."""
     return hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-
-
-# ── Inbound Webhook Token ─────────────────────────────────────────────────────
-def generate_webhook_token() -> str:
-    """Generate a secure random token for the developer's inbound webhook URL."""
-    return secrets.token_urlsafe(32)
