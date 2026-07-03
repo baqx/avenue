@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.dependencies import CurrentDeveloperJWT
 from app.core.errors import BadRequestError, NotFoundError
-from app.core.security import generate_api_key, generate_webhook_token, hash_password, verify_password
+from app.core.security import generate_api_key, hash_password, verify_password
 from app.db.models.developer import ApiKey, Developer
 from app.db.models.nomba_config import NombaConfig, OutboundWebhook
 from app.db.session import get_db
@@ -96,22 +96,26 @@ async def save_nomba_config(
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
     config = result.scalar_one_or_none()
     if config:
+        config.account_id = body.account_id
         config.client_id = body.client_id
         config.encrypted_client_secret = encrypt(body.client_secret)
+        config.webhook_signature_key = body.webhook_signature_key
     else:
         config = NombaConfig(
             developer_id=developer.id,
+            account_id=body.account_id,
             client_id=body.client_id,
             encrypted_client_secret=encrypt(body.client_secret),
-            inbound_webhook_token=generate_webhook_token(),
+            webhook_signature_key=body.webhook_signature_key,
         )
         db.add(config)
     await db.commit()
     await db.refresh(config)
     return NombaConfigResponse(
+        account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••" + body.client_secret[-4:],
-        inbound_webhook_url=f"{settings.FRONTEND_URL.replace('3000', '8000')}/v1/webhooks/inbound/{developer.id}",
+        inbound_webhook_url=f"https://api.avenue.so/v1/webhooks/inbound/{developer.id}",
     )
 
 
@@ -122,6 +126,7 @@ async def get_nomba_config(developer: Developer = CurrentDeveloperJWT, db: Async
     if not config:
         raise NotFoundError("Nomba configuration")
     return NombaConfigResponse(
+        account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••",
         inbound_webhook_url=f"https://api.avenue.so/v1/webhooks/inbound/{developer.id}",

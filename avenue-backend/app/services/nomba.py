@@ -1,7 +1,14 @@
 """
 Nomba API client — all calls to Nomba go through this service.
-Handles: creating virtual accounts (NUBANs), initiating transfers.
+Handles: authentication, creating virtual accounts (NUBANs), initiating transfers.
+
+All endpoints follow the official Nomba API documentation:
+  - Auth: POST /v1/auth/token/issue
+  - Virtual Accounts: POST /v1/accounts/virtual
+  - Transfers: POST /v2/transfers/bank
 """
+import uuid
+
 import httpx
 from app.core.config import settings
 from app.services.encryption import decrypt
@@ -14,84 +21,124 @@ class NombaAPIError(Exception):
         super().__init__(message)
 
 
-async def _get_nomba_token(client_id: str, encrypted_secret: str) -> str:
-    """Exchange Nomba client credentials for an access token."""
+async def _get_nomba_token(account_id: str, client_id: str, encrypted_secret: str) -> str:
+    """
+    Exchange Nomba client credentials for an access token.
+
+    Nomba auth endpoint: POST /v1/auth/token/issue
+    Requires: accountId header, grant_type, client_id, client_secret in body.
+    """
     client_secret = decrypt(encrypted_secret)
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.NOMBA_BASE_URL}/auth/token/",
-            json={"clientId": client_id, "clientSecret": client_secret},
+            f"{settings.NOMBA_BASE_URL}/v1/auth/token/issue",
+            headers={
+                "Content-Type": "application/json",
+                "accountId": account_id,
+            },
+            json={
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
             timeout=15.0,
         )
         if response.status_code != 200:
             raise NombaAPIError(f"Nomba auth failed: {response.text}", response.status_code)
-        data = response.json()
-        return data["data"]["accessToken"]
+        result = response.json()
+        if result.get("code") != "00":
+            raise NombaAPIError(f"Nomba auth error: {result.get('description', 'Unknown')}")
+        return result["data"]["access_token"]
 
 
 async def create_virtual_account(
+    account_id: str,
     client_id: str,
     encrypted_secret: str,
+    account_ref: str,
     account_name: str,
-    customer_email: str,
-    customer_reference: str,
 ) -> dict:
     """
     Create a dedicated virtual account (NUBAN) on Nomba.
-    Returns: { account_number, bank_name, account_name, nomba_account_id }
+
+    Nomba endpoint: POST /v1/accounts/virtual
+    Required fields: accountRef (16-64 chars), accountName (8-64 chars)
+
+    Returns: { account_number, bank_name, account_name, nomba_account_id, account_ref }
     """
-    token = await _get_nomba_token(client_id, encrypted_secret)
+    token = await _get_nomba_token(account_id, client_id, encrypted_secret)
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.NOMBA_BASE_URL}/accounts/virtual/",
-            headers={"Authorization": f"Bearer {token}"},
+            f"{settings.NOMBA_BASE_URL}/v1/accounts/virtual",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "accountId": account_id,
+            },
             json={
+                "accountRef": account_ref,
                 "accountName": account_name,
-                "customerEmail": customer_email,
-                "customerReference": customer_reference,
-                "currencyCode": "NGN",
             },
             timeout=15.0,
         )
         if response.status_code not in (200, 201):
             raise NombaAPIError(f"Nomba account creation failed: {response.text}", response.status_code)
-        data = response.json()["data"]
+        result = response.json()
+        if result.get("code") != "00":
+            raise NombaAPIError(f"Nomba account creation error: {result.get('description', 'Unknown')}")
+        data = result["data"]
         return {
-            "account_number": data["accountNumber"],
-            "bank_name": data.get("bankName", "Nomba MFB"),
-            "account_name": data["accountName"],
-            "nomba_account_id": data["accountId"],
+            "account_number": data["bankAccountNumber"],
+            "bank_name": data.get("bankName", "Nombank MFB"),
+            "account_name": data.get("bankAccountName", account_name),
+            "nomba_account_id": data.get("accountHolderId", ""),
+            "account_ref": data.get("accountRef", account_ref),
         }
 
 
 async def initiate_transfer(
+    account_id: str,
     client_id: str,
     encrypted_secret: str,
-    source_account_id: str,
     destination_account_number: str,
     destination_bank_code: str,
+    destination_account_name: str,
     amount_kobo: int,
     narration: str,
+    merchant_tx_ref: str | None = None,
 ) -> dict:
     """
-    Initiate an outbound transfer from a virtual account.
-    Amount is in kobo — converted to NGN for Nomba API.
+    Initiate an outbound bank transfer from the parent account.
+
+    Nomba endpoint: POST /v2/transfers/bank
+    Amount is in kobo internally — converted to NGN for Nomba API.
+    merchantTxRef is the idempotency key (required by Nomba).
     """
-    token = await _get_nomba_token(client_id, encrypted_secret)
+    token = await _get_nomba_token(account_id, client_id, encrypted_secret)
     amount_ngn = amount_kobo / 100
+
+    # Generate a unique merchantTxRef if not provided
+    if not merchant_tx_ref:
+        merchant_tx_ref = f"AVE-{uuid.uuid4().hex[:16].upper()}"
+
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.NOMBA_BASE_URL}/transfers/",
-            headers={"Authorization": f"Bearer {token}"},
+            f"{settings.NOMBA_BASE_URL}/v2/transfers/bank",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "accountId": account_id,
+            },
             json={
-                "sourceAccountId": source_account_id,
-                "destinationAccountNumber": destination_account_number,
-                "destinationBankCode": destination_bank_code,
                 "amount": amount_ngn,
+                "accountNumber": destination_account_number,
+                "bankCode": destination_bank_code,
+                "accountName": destination_account_name,
+                "merchantTxRef": merchant_tx_ref,
                 "narration": narration,
             },
             timeout=20.0,
         )
         if response.status_code not in (200, 201):
             raise NombaAPIError(f"Nomba transfer failed: {response.text}", response.status_code)
-        return response.json()["data"]
+        return response.json().get("data", {})

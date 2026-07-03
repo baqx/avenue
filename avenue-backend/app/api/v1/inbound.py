@@ -1,19 +1,46 @@
 """
 Inbound webhook receiver — Nomba → Avenue.
 This is the most critical endpoint in the entire system.
+
+Nomba webhook payload structure (payment_success):
+{
+  "event_type": "payment_success",
+  "requestId": "...",
+  "data": {
+    "merchant": { "walletId": "...", "walletBalance": ..., "userId": "..." },
+    "terminal": {},
+    "transaction": {
+      "aliasAccountNumber": "...",       # the virtual account number
+      "transactionId": "...",            # unique reference (idempotency key)
+      "transactionAmount": 120,          # amount in NGN (not kobo!)
+      "narration": "...",
+      "time": "...",
+      "type": "vact_transfer"
+    },
+    "customer": {
+      "senderName": "...",
+      "accountNumber": "...",            # sender's account number
+      "bankName": "...",
+      "bankCode": "..."
+    }
+  }
+}
+
+Nomba signature headers:
+  - nomba-signature: Base64-encoded HMAC-SHA256
+  - nomba-timestamp: RFC-3339 timestamp
 """
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.errors import BadRequestError
-from app.core.security import verify_hmac_signature
+from app.core.security import verify_nomba_signature
 from app.db.models.nomba_config import NombaConfig, OutboundWebhook
-from app.db.models.suspense import SuspenseItem
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
 from app.services.ai_engine import reconcile_narration
@@ -33,43 +60,52 @@ async def receive_nomba_webhook(
     """
     Nomba sends raw payment webhooks here.
     Processing pipeline (in order):
-    1. Validate HMAC signature
-    2. Parse payload
-    3. Idempotency check (DB UNIQUE constraint)
-    4. Find target wallet by account_number
+    1. Validate HMAC-SHA256 signature
+    2. Parse payload (using Nomba's actual field structure)
+    3. Idempotency check (DB UNIQUE constraint on nomba_reference)
+    4. Find target wallet by aliasAccountNumber
     5. Check wallet status
     6. Run AI reconciliation
     7. Write double-entry ledger
     8. Evaluate agents
     9. Dispatch enriched webhook to developer
     """
-    raw_body = await request.body()
     payload = await request.json()
 
-    # ── Step 1: Validate HMAC ──────────────────────────────────────────────
+    # ── Step 1: Validate HMAC signature ────────────────────────────────────
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer_id))
     nomba_config = result.scalar_one_or_none()
     if not nomba_config:
         return {"status": "rejected", "reason": "Unknown developer"}
 
-    nomba_signature = request.headers.get("x-nomba-signature", "")
-    if not verify_hmac_signature(raw_body, nomba_signature, nomba_config.inbound_webhook_token):
-        return {"status": "rejected", "reason": "Invalid signature"}
+    nomba_signature = request.headers.get("nomba-signature", "")
+    nomba_timestamp = request.headers.get("nomba-timestamp", "")
 
-    # ── Step 2: Parse Nomba payload ────────────────────────────────────────
-    # Adapt field names to Nomba's actual webhook schema
-    event_type = payload.get("event", "")
-    transaction = payload.get("data", {})
-    nomba_reference = transaction.get("transactionReference") or transaction.get("reference")
-    account_number = transaction.get("destinationAccountNumber") or transaction.get("accountNumber")
-    amount_ngn = float(transaction.get("amount", 0))
-    amount_kobo = int(amount_ngn * 100)
-    sender_name = transaction.get("senderName") or transaction.get("sourceName")
-    sender_account = transaction.get("sourceAccountNumber")
-    raw_narration = transaction.get("narration") or transaction.get("description", "")
+    if nomba_signature and nomba_config.webhook_signature_key:
+        if not verify_nomba_signature(payload, nomba_signature, nomba_config.webhook_signature_key, nomba_timestamp):
+            return {"status": "rejected", "reason": "Invalid signature"}
+
+    # ── Step 2: Parse Nomba payload (actual structure) ─────────────────────
+    event_type = payload.get("event_type", "")
+    data = payload.get("data", {})
+    transaction = data.get("transaction", {})
+    customer = data.get("customer", {})
+
+    # Extract fields from Nomba's actual webhook structure
+    nomba_reference = transaction.get("transactionId")
+    account_number = transaction.get("aliasAccountNumber")
+    amount_ngn = float(transaction.get("transactionAmount", 0))
+    amount_kobo = int(amount_ngn * 100)  # Nomba sends NGN, we store kobo
+    sender_name = customer.get("senderName")
+    sender_account = customer.get("accountNumber")
+    raw_narration = transaction.get("narration", "")
 
     if not nomba_reference or not account_number:
         return {"status": "rejected", "reason": "Missing required fields"}
+
+    # Only process payment_success events for crediting
+    if event_type != "payment_success":
+        return {"status": "ok", "note": f"Event type '{event_type}' acknowledged but not processed for credit"}
 
     # ── Step 3: Find wallet ────────────────────────────────────────────────
     result = await db.execute(

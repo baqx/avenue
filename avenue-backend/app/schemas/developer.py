@@ -52,11 +52,14 @@ class NewApiKeyResponse(BaseModel):
 
 
 class NombaConfigRequest(BaseModel):
+    account_id: str  # Nomba parent accountId
     client_id: str
     client_secret: str
+    webhook_signature_key: str  # Signature key from Nomba dashboard
 
 
 class NombaConfigResponse(BaseModel):
+    account_id: str
     client_id: str
     client_secret_masked: str  # e.g. "••••••••xxxx"
     inbound_webhook_url: str

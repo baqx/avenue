@@ -44,20 +44,27 @@ async def create_wallet(
     if not nomba_config:
         raise BadRequestError("Please configure your Nomba credentials in Settings before creating wallets.")
 
-    account_name = f"{developer.company_name} / {body.label or body.customer_reference}"
+    account_name = f"{developer.company_name} / {body.first_name} {body.last_name}"
+
+    # Generate a unique account reference for Nomba (16-64 chars required)
+    import uuid as uuid_mod
+    account_ref = f"ave_{uuid_mod.uuid4().hex}"  # e.g. "ave_a1b2c3d4..." — 36 chars
 
     # Call Nomba to provision the NUBAN
     nomba_data = await create_virtual_account(
+        account_id=nomba_config.account_id,
         client_id=nomba_config.client_id,
         encrypted_secret=nomba_config.encrypted_client_secret,
-        account_name=account_name[:50],
-        customer_email=developer.email,
-        customer_reference=body.customer_reference,
+        account_ref=account_ref,
+        account_name=account_name[:64],
     )
 
     wallet = Wallet(
         developer_id=developer.id,
         customer_reference=body.customer_reference,
+        first_name=body.first_name,
+        last_name=body.last_name,
+        email=body.email,
         label=body.label,
         currency=body.currency,
         system_prompt=body.system_prompt,
@@ -223,6 +230,9 @@ def _wallet_to_response(wallet: Wallet, balance: int) -> WalletResponse:
     return WalletResponse(
         id=wallet.id,
         customer_reference=wallet.customer_reference,
+        first_name=wallet.first_name,
+        last_name=wallet.last_name,
+        email=wallet.email,
         label=wallet.label,
         account_number=wallet.account_number,
         bank_name=wallet.bank_name,

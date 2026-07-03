@@ -16,10 +16,11 @@ class NombaConfig(Base):
     developer_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("developers.id", ondelete="CASCADE"), unique=True, nullable=False
     )
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)  # Nomba parent accountId
     client_id: Mapped[str] = mapped_column(Text, nullable=False)
     encrypted_client_secret: Mapped[str] = mapped_column(Text, nullable=False)
-    # Token used to verify HMAC signatures on incoming Nomba webhooks
-    inbound_webhook_token: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Signature key set by the developer on their Nomba dashboard — used to verify inbound HMAC
+    webhook_signature_key: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Relationships
     developer: Mapped["Developer"] = relationship("Developer", back_populates="nomba_config")  # type: ignore
