@@ -95,9 +95,3 @@ def verify_nomba_signature(payload: dict, signature: str, secret: str, timestamp
 def sign_outbound_webhook(payload: bytes, secret: str) -> str:
     """Sign an outbound Avenue webhook payload using HMAC-SHA256."""
     return hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-
-
-# ── Inbound Webhook Token ─────────────────────────────────────────────────────
-def generate_webhook_token() -> str:
-    """Generate a secure random token for the developer's inbound webhook URL."""
-    return secrets.token_urlsafe(32)

@@ -21,13 +21,24 @@ class NombaAPIError(Exception):
         super().__init__(message)
 
 
+import time
+from datetime import datetime
+
+_TOKEN_CACHE = {}  # { client_id: {"token": "...", "expires_at": timestamp_float} }
+
 async def _get_nomba_token(account_id: str, client_id: str, encrypted_secret: str) -> str:
     """
-    Exchange Nomba client credentials for an access token.
+    Exchange Nomba client credentials for an access token, with caching.
 
     Nomba auth endpoint: POST /v1/auth/token/issue
     Requires: accountId header, grant_type, client_id, client_secret in body.
     """
+    now = time.time()
+    cached = _TOKEN_CACHE.get(client_id)
+    # Refresh if expired or expiring within 5 minutes (300 seconds)
+    if cached and cached["expires_at"] > now + 300:
+        return cached["token"]
+
     client_secret = decrypt(encrypted_secret)
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -48,7 +59,17 @@ async def _get_nomba_token(account_id: str, client_id: str, encrypted_secret: st
         result = response.json()
         if result.get("code") != "00":
             raise NombaAPIError(f"Nomba auth error: {result.get('description', 'Unknown')}")
-        return result["data"]["access_token"]
+        
+        data = result["data"]
+        token = data["access_token"]
+        
+        # Nomba returns expiresAt in ISO format, but we'll just cache for 30 minutes 
+        # (1800 seconds) from now as per their documentation
+        _TOKEN_CACHE[client_id] = {
+            "token": token,
+            "expires_at": now + 1800
+        }
+        return token
 
 
 async def create_virtual_account(

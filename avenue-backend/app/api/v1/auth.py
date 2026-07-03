@@ -13,7 +13,6 @@ from app.core.errors import BadRequestError, ConflictError, NotFoundError
 from app.core.security import (
     create_access_token,
     generate_api_key,
-    generate_webhook_token,
     hash_password,
     verify_password,
 )
