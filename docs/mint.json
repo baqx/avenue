@@ -46,7 +46,8 @@
         "concepts/the-ledger",
         "concepts/ai-reconciliation",
         "concepts/agents",
-        "concepts/suspense-engine"
+        "concepts/suspense-engine",
+        "concepts/agent-native-infrastructure"
       ]
     },
     {
