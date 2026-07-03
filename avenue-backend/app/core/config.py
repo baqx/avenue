@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     NOMBA_BASE_URL: str = "https://api.nomba.com"
 
     # AI Engine
-    OPENAI_API_KEY: str
+    GROQ_API_KEY: str
     AI_CONFIDENCE_THRESHOLD: float = 0.75
 
     # Outbound Webhooks

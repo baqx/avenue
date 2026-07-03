@@ -5,10 +5,10 @@ structured intent extraction output.
 """
 import json
 from typing import Optional
-from openai import AsyncOpenAI
+from groq import AsyncGroq
 from app.core.config import settings
 
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 SYSTEM_INSTRUCTION = """
 You are Avenue's financial reconciliation AI. Your job is to analyze inbound bank transfer narrations
@@ -53,7 +53,7 @@ Extract the intent and return JSON.
 """
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="llama3-8b-8192",
             messages=[
                 {"role": "system", "content": SYSTEM_INSTRUCTION},
                 {"role": "user", "content": user_message},
