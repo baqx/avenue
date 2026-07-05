@@ -1,165 +1,224 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useGetWebhookConfigQuery, useConfigureWebhookMutation } from '@/lib/api/developerApi';
-import { useGetWebhookLogsQuery } from '@/lib/api/webhooksApi';
-import { TableShimmer } from '@/components/ui/Shimmer';
-import { useToast } from '@/components/ui/toast/ToastProvider';
-import { PlugsConnected, CheckCircle, XCircle, CircleNotch } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Copy, CheckCircle, Warning, PaperPlaneRight, PlugsConnected, ArrowClockwise, CodeBlock } from "@phosphor-icons/react";
+import { PageReveal } from "@/components/ui/PageReveal";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+
+const WEBHOOK_LOGS = [
+  { id: "log_001", event: "ledger.credit", status: "DELIVERED", url: "https://api.zenithpay.co/webhooks/avenue", time: "2 mins ago", retries: 0 },
+  { id: "log_002", event: "wallet.created", status: "DELIVERED", url: "https://api.zenithpay.co/webhooks/avenue", time: "1 hr ago", retries: 0 },
+  { id: "log_003", event: "ledger.credit", status: "FAILED", url: "https://api.zenithpay.co/webhooks/avenue", time: "3 hrs ago", retries: 2 },
+];
 
 export default function WebhooksPage() {
-  const toast = useToast();
-  const [urlInput, setUrlInput] = useState('');
-  
-  const { data: config, isLoading: isConfigLoading } = useGetWebhookConfigQuery();
-  const [configureWebhook, { isLoading: isConfiguring }] = useConfigureWebhookMutation();
-  
-  const [page, setPage] = useState(1);
-  const { data: logs, isLoading: isLogsLoading } = useGetWebhookLogsQuery({ page, limit: 20 });
+  const [activeTab, setActiveTab] = useState<"config" | "logs">("config");
+  const [copied, setCopied] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<typeof WEBHOOK_LOGS[0] | null>(null);
 
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await configureWebhook({ url: urlInput }).unwrap();
-      toast.success('Webhook configured', 'Your endpoint has been updated.');
-      setUrlInput('');
-    } catch (err: any) {
-      toast.error('Configuration failed', err?.data?.detail || 'Could not update webhook URL.');
-    }
-  };
+  const inboundUrl = "https://api.avenue.so/v1/webhooks/inbound/dev_8f92j29x";
 
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'
-    }).format(new Date(dateString));
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inboundUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Webhooks</h1>
-        <p className="mt-2 text-sm text-gray-700">Configure your endpoint to receive real-time event notifications from Avenue.</p>
+    <PageReveal>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Webhooks</h1>
+          <p className="text-[#6a6c6c] mt-1">Configure event routing and monitor delivery logs.</p>
+        </div>
       </div>
 
-      {/* Configuration Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 flex items-center gap-3">
-          <PlugsConnected className="w-6 h-6 text-blue-600" />
-          <h3 className="text-lg font-medium text-gray-900">Endpoint Configuration</h3>
+      <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col mb-8">
+        <div className="flex border-b border-[#e4e7e9] bg-[#f7f9fb] px-4 pt-4 gap-6">
+          <button 
+            onClick={() => setActiveTab("config")}
+            className={`pb-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === "config" ? "border-[#10b981] text-[#022c22]" : "border-transparent text-[#6a6c6c] hover:text-[#022c22]"}`}
+          >
+            Configuration
+          </button>
+          <button 
+            onClick={() => setActiveTab("logs")}
+            className={`pb-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === "logs" ? "border-[#10b981] text-[#022c22]" : "border-transparent text-[#6a6c6c] hover:text-[#022c22]"}`}
+          >
+            Delivery Logs
+          </button>
         </div>
+
         <div className="p-6">
-          {isConfigLoading ? (
-            <div className="animate-pulse flex space-x-4">
-              <div className="h-10 bg-gray-200 rounded w-full"></div>
-            </div>
-          ) : (
-            <form onSubmit={handleSaveConfig} className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 w-full">
-                <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Webhook URL
-                </label>
-                <input
-                  type="url"
-                  id="webhookUrl"
-                  placeholder={config?.url || "https://api.yourdomain.com/webhooks/avenue"}
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border px-3 py-2"
-                />
+          {activeTab === "config" && (
+            <div className="space-y-8 max-w-3xl">
+              
+              {/* Inbound Config */}
+              <div>
+                <h3 className="text-lg font-bold text-[#022c22] mb-1">Inbound Webhook (From Nomba)</h3>
+                <p className="text-sm text-[#6a6c6c] mb-4">Paste this URL into your Nomba dashboard. Nomba will send all raw transactions here for Avenue to process.</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-[#f7f9fb] border border-[#e4e7e9] rounded-lg p-3 font-mono text-sm text-[#022c22] overflow-x-auto whitespace-nowrap hide-scrollbar">
+                    {inboundUrl}
+                  </div>
+                  <Button onClick={handleCopy} variant="outline" className="shrink-0 gap-2 border-[#e4e7e9] text-[#022c22]">
+                    {copied ? <CheckCircle weight="fill" className="text-[#10b981]" /> : <Copy weight="bold" />}
+                    {copied ? "Copied" : "Copy URL"}
+                  </Button>
+                </div>
               </div>
-              <button
-                type="submit"
-                disabled={isConfiguring || !urlInput}
-                className="inline-flex justify-center items-center rounded-lg border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 h-[38px]"
-              >
-                {isConfiguring ? <CircleNotch className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Save Endpoint
-              </button>
-            </form>
+
+              <div className="h-px bg-[#e4e7e9] w-full" />
+
+              {/* Outbound Config */}
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#022c22] mb-1">Outbound Webhook (To Your App)</h3>
+                    <p className="text-sm text-[#6a6c6c]">Avenue will send enriched, processed events to this URL.</p>
+                  </div>
+                  <div className="bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1.5">
+                    <PlugsConnected weight="bold" /> ACTIVE
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-[#022c22]">Endpoint URL</label>
+                    <input 
+                      type="url"
+                      defaultValue="https://api.zenithpay.co/webhooks/avenue"
+                      className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-[#022c22]">Signing Secret</label>
+                    <div className="relative">
+                      <input 
+                        type="password"
+                        defaultValue="whsec_8f92j29x8f92j29x8f92j29x"
+                        readOnly
+                        className="w-full h-11 pl-3.5 pr-24 rounded-lg border border-[#e4e7e9] text-sm bg-[#f7f9fb] outline-none text-[#6a6c6c]"
+                      />
+                      <button className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#022c22] bg-white border border-[#e4e7e9] px-2 py-1 rounded hover:bg-[#f7f9fb]">
+                        Reveal
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <Button className="bg-[#022c22] text-white hover:bg-[#064e3b]">Save Changes</Button>
+                    <Button variant="outline" className="gap-2 border-[#e4e7e9] text-[#022c22]">
+                      <PaperPlaneRight weight="fill" />
+                      Send Test Event
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           )}
-          {config?.url && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-100 w-fit">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-              </span>
-              Active routing to: <span className="font-mono text-xs ml-1">{config.url}</span>
+
+          {activeTab === "logs" && (
+            <div className="-mx-6 -my-6">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#f7f9fb] border-b border-[#e4e7e9]">
+                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Event Type</th>
+                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Retries</th>
+                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {WEBHOOK_LOGS.map((log) => (
+                      <tr 
+                        key={log.id} 
+                        onClick={() => setSelectedLog(log)}
+                        className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f7f9fb] transition-colors cursor-pointer"
+                      >
+                        <td className="p-4 font-mono text-sm text-[#022c22] font-semibold whitespace-nowrap">
+                          {log.event}
+                        </td>
+                        <td className="p-4 whitespace-nowrap">
+                          {log.status === "DELIVERED" ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 flex items-center gap-1.5 w-max">
+                              <CheckCircle weight="fill" /> DELIVERED
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 flex items-center gap-1.5 w-max">
+                              <Warning weight="fill" /> FAILED
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-sm text-[#6a6c6c] whitespace-nowrap">
+                          {log.retries > 0 ? log.retries : "-"}
+                        </td>
+                        <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{log.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Logs Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Delivery Logs</h3>
-        </div>
-        
-        {isLogsLoading ? (
-          <div className="p-4"><TableShimmer rows={5} /></div>
-        ) : !logs?.items.length ? (
-          <div className="p-12 text-center text-gray-500">
-            <p>No webhook deliveries recorded yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {logs.items.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(log.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800 font-mono">
-                        {log.event_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {log.status === 'DELIVERED' ? (
-                        <span className="flex items-center text-sm font-medium text-green-700">
-                          <CheckCircle className="w-4 h-4 mr-1.5" weight="fill" /> Delivered
-                        </span>
-                      ) : log.status === 'FAILED' ? (
-                        <span className="flex items-center text-sm font-medium text-yellow-700">
-                          <CircleNotch className="w-4 h-4 mr-1.5 animate-spin" /> Retrying
-                        </span>
-                      ) : (
-                        <span className="flex items-center text-sm font-medium text-red-700">
-                          <XCircle className="w-4 h-4 mr-1.5" weight="fill" /> Dead
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.attempt_count}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                      {log.http_status_code ? (
-                        <span className={cn(
-                          "px-2 py-1 rounded",
-                          log.http_status_code >= 200 && log.http_status_code < 300 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                        )}>
-                          HTTP {log.http_status_code}
-                        </span>
-                      ) : 'Timeout'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <Modal 
+        isOpen={!!selectedLog} 
+        onClose={() => setSelectedLog(null)} 
+        title="Event Delivery Details"
+        className="sm:max-w-xl"
+      >
+        {selectedLog && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-mono font-bold text-[#022c22]">{selectedLog.event}</h4>
+                <p className="text-sm text-[#6a6c6c] mt-1">{selectedLog.id} • {selectedLog.time}</p>
+              </div>
+              {selectedLog.status === "DELIVERED" ? (
+                <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                  DELIVERED (200 OK)
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
+                  FAILED (500)
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider">Target URL</div>
+              <div className="bg-[#f7f9fb] border border-[#e4e7e9] rounded-lg p-3 font-mono text-sm text-[#022c22] break-all">
+                {selectedLog.url}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider">Payload Snippet</div>
+              <div className="bg-[#022c22] rounded-lg p-4 font-mono text-xs text-[#10b981] overflow-x-auto">
+                <pre>{`{
+  "event_id": "${selectedLog.id}",
+  "event_type": "${selectedLog.event}",
+  "api_version": "2026-07-01",
+  "data": { ... }
+}`}</pre>
+              </div>
+            </div>
+
+            {selectedLog.status === "FAILED" && (
+              <Button className="w-full justify-center gap-2 bg-[#022c22] text-white hover:bg-[#064e3b]">
+                <ArrowClockwise weight="bold" />
+                Retry Delivery Now
+              </Button>
+            )}
           </div>
         )}
-      </div>
-    </div>
+      </Modal>
+
+    </PageReveal>
   );
 }

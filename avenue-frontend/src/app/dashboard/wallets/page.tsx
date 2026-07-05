@@ -1,138 +1,198 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useGetWalletsQuery } from '@/lib/api/walletsApi';
-import { TableShimmer } from '@/components/ui/Shimmer';
-import { Plus, CaretRight, MagnifyingGlass, Wallet } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Plus, MagnifyingGlass, Wallet, LockKey, LockKeyOpen, Trash } from "@phosphor-icons/react";
+import { PageReveal } from "@/components/ui/PageReveal";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+
+// Mock data
+const WALLETS = [
+  { id: "wal_1", nuban: "0012345678", label: "Apt 4B Rent", status: "ACTIVE", balance: "₦450,000.00", created: "2024-01-12" },
+  { id: "wal_2", nuban: "0012345679", label: "John Doe Subs", status: "ACTIVE", balance: "₦12,500.00", created: "2024-01-15" },
+  { id: "wal_3", nuban: "0012345680", label: "Escrow - TX_09", status: "FROZEN", balance: "₦1,200,000.00", created: "2024-02-01" },
+  { id: "wal_4", nuban: "0012345681", label: "Marketing Fund", status: "CLOSED", balance: "₦0.00", created: "2023-11-20" },
+];
 
 export default function WalletsPage() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useGetWalletsQuery({ page, limit: 20 });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const formatCurrency = (kobo: number) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(kobo / 100);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'FROZEN': return 'bg-yellow-100 text-yellow-800';
-      case 'CLOSED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const filteredWallets = WALLETS.filter(w => 
+    w.nuban.includes(searchQuery) || w.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="sm:flex sm:items-center sm:justify-between">
+    <PageReveal>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Wallets</h1>
-          <p className="mt-2 text-sm text-gray-700">A list of all provisioned virtual accounts and their balances.</p>
+          <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Virtual Wallets</h1>
+          <p className="text-[#6a6c6c] mt-1">Manage provisioned NUBANs and their balances.</p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Link
-            href="/dashboard/wallets/new"
-            className="inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto transition-colors"
-          >
-            <Plus className="-ml-1 mr-2 h-5 w-5" />
-            Provision Wallet
-          </Link>
-        </div>
+        
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-[#022c22] text-white hover:bg-[#064e3b] shrink-0">
+          <Plus weight="bold" />
+          <span>Provision Wallet</span>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-4 py-4 sm:px-6 border-b border-gray-200 flex items-center justify-between">
-          <div className="relative rounded-md max-w-sm w-full">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlass className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
+      <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col">
+        {/* Toolbar */}
+        <div className="p-4 border-b border-[#e4e7e9] flex items-center bg-[#f7f9fb]">
+          <div className="relative max-w-sm w-full">
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbbdbd]" />
+            <input 
               type="text"
-              className="block w-full rounded-md border-gray-300 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
-              placeholder="Search by customer reference or name..."
+              placeholder="Search by NUBAN or label..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
             />
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="p-4">
-            <TableShimmer rows={5} />
-          </div>
-        ) : isError ? (
-          <div className="p-6 text-center text-red-600 bg-red-50">
-            Failed to load wallets. Please try again.
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center text-gray-500">
-            <Wallet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No wallets provisioned</h3>
-            <p className="mt-1">Get started by provisioning a new virtual account.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">View</span></th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.items.map((wallet) => (
-                  <tr key={wallet.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{wallet.account_number}</div>
-                      <div className="text-sm text-gray-500">{wallet.bank_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{wallet.first_name} {wallet.last_name}</div>
-                      <div className="text-sm text-gray-500">{wallet.customer_reference}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusColor(wallet.status))}>
-                        {wallet.status}
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white border-b border-[#e4e7e9]">
+                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">NUBAN</th>
+                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Label</th>
+                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Balance</th>
+                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredWallets.map((wallet) => (
+                <tr key={wallet.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
+                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.nuban}</td>
+                  <td className="p-4 text-[#022c22] whitespace-nowrap font-medium">{wallet.label}</td>
+                  <td className="p-4 whitespace-nowrap">
+                    {wallet.status === "ACTIVE" && (
+                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                        ACTIVE
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                      {formatCurrency(wallet.balance)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link href={`/dashboard/wallets/${wallet.id}`} className="text-blue-600 hover:text-blue-900 inline-flex items-center">
-                        View <CaretRight className="ml-1 w-4 h-4" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        {/* Pagination placeholder */}
-        {data && data.total > 0 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{(page - 1) * 20 + 1}</span> to <span className="font-medium">{Math.min(page * 20, data.total)}</span> of{' '}
-                  <span className="font-medium">{data.total}</span> results
-                </p>
+                    )}
+                    {wallet.status === "FROZEN" && (
+                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                        FROZEN
+                      </span>
+                    )}
+                    {wallet.status === "CLOSED" && (
+                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
+                        CLOSED
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">{wallet.balance}</td>
+                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{wallet.created}</td>
+                </tr>
+              ))}
+              {filteredWallets.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No wallets found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards (Instead of overflowing table) */}
+        <div className="md:hidden divide-y divide-[#e4e7e9]">
+          {filteredWallets.map((wallet) => (
+            <div key={wallet.id} className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4]">
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-mono font-medium text-[#022c22]">{wallet.nuban}</span>
+                {wallet.status === "ACTIVE" && <span className="text-[10px] uppercase font-bold text-[#059669]">ACTIVE</span>}
+                {wallet.status === "FROZEN" && <span className="text-[10px] uppercase font-bold text-blue-600">FROZEN</span>}
+                {wallet.status === "CLOSED" && <span className="text-[10px] uppercase font-bold text-red-600">CLOSED</span>}
               </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Previous</button>
-                  <button onClick={() => setPage(p => p + 1)} disabled={page * 20 >= data.total} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Next</button>
-                </nav>
+              <div className="font-medium text-[#022c22] mb-1">{wallet.label}</div>
+              <div className="flex justify-between items-end mt-4">
+                <span className="text-[#6a6c6c] text-xs">{wallet.created}</span>
+                <span className="font-semibold text-[#022c22]">{wallet.balance}</span>
               </div>
             </div>
-          </div>
-        )}
+          ))}
+          {filteredWallets.length === 0 && (
+            <div className="p-8 text-center text-[#6a6c6c]">No wallets found.</div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Provision New Wallet"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[#6a6c6c]">
+            A dedicated NUBAN will be provisioned on Nomba instantly.
+          </p>
+          
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-[#022c22]">Customer Reference</label>
+            <input 
+              type="text"
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+              placeholder="e.g. user_987"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[#022c22]">First Name</label>
+              <input 
+                type="text"
+                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+                placeholder="e.g. John"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[#022c22]">Last Name</label>
+              <input 
+                type="text"
+                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+                placeholder="e.g. Doe"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-[#022c22]">Email Address</label>
+            <input 
+              type="email"
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+              placeholder="e.g. john@example.com"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-[#022c22]">Label</label>
+            <input 
+              type="text"
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+              placeholder="e.g. User #981 Wallet"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-[#022c22]">AI System Prompt (Optional)</label>
+            <textarea 
+              className="w-full h-24 p-3.5 rounded-lg border border-[#e4e7e9] text-sm resize-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+              placeholder="Context for the AI reconciliation engine..."
+            />
+          </div>
+          
+          <Button 
+            className="w-full justify-center bg-[#022c22] text-white hover:bg-[#064e3b] h-12 mt-2" 
+            onClick={() => setIsModalOpen(false)}
+          >
+            Provision NUBAN
+          </Button>
+        </div>
+      </Modal>
+    </PageReveal>
   );
 }
