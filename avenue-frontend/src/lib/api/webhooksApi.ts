@@ -25,7 +25,7 @@ export const webhooksApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWebhookLogs: builder.query<WebhookLogListResponse, { page?: number; limit?: number; status?: string }>({
       query: (params) => ({
-        url: '/webhooks',
+        url: '/webhook-logs',
         params,
       }),
       providesTags: ['WebhookLog'],
