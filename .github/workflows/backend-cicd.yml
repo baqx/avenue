@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - 'avenue-backend/**'
+      - '.github/workflows/backend-cicd.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'avenue-backend/**'
+      - '.github/workflows/backend-cicd.yml'
 
 jobs:
   test:
