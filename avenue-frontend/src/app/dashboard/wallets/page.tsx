@@ -139,14 +139,9 @@ export default function WalletsPage() {
               {filteredWallets.length === 0 && (
                 <div className="p-8 text-center text-[#6a6c6c]">No wallets found.</div>
               )}
-                <span className="font-semibold text-[#022c22]">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
             </div>
-          ))}
-          {filteredWallets.length === 0 && (
-            <div className="p-8 text-center text-[#6a6c6c]">No wallets found.</div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       <Modal 
