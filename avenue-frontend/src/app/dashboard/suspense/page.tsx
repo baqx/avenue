@@ -1,220 +1,122 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ShieldWarning, MagnifyingGlass, Robot, CheckCircle, ArrowUUpLeft, CaretRight, Info } from "@phosphor-icons/react";
-import { PageReveal } from "@/components/ui/PageReveal";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
-
-// Mock data
-const SUSPENSE_ITEMS = [
-  { 
-    id: "tx_10925", 
-    ref: "nomba_119920386", 
-    walletNuban: "0012345679",
-    amount: "₦2,500.00", 
-    rawNarration: "TRF/GTB/JOHN_DOE/1293810293",
-    aiConfidence: 0.31,
-    time: "Oct 23, 04:12 PM",
-    reason: "Low Confidence: Unrecognized sender name format."
-  },
-  { 
-    id: "tx_10940", 
-    ref: "nomba_119920555", 
-    walletNuban: "0012345681",
-    amount: "₦400,000.00", 
-    rawNarration: "TRF/WEMA/XYZ_CORP/PAYMENT_01",
-    aiConfidence: 0.55,
-    time: "Oct 24, 08:30 AM",
-    reason: "Low Confidence: Overlapping intent signatures."
-  },
-];
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useGetSuspenseItemsQuery } from '@/lib/api/suspenseApi';
+import { TableShimmer } from '@/components/ui/Shimmer';
+import { CaretRight, WarningCircle } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
 export default function SuspensePage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<typeof SUSPENSE_ITEMS[0] | null>(null);
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError } = useGetSuspenseItemsQuery({ page, limit: 20 });
 
-  const filteredItems = SUSPENSE_ITEMS.filter(i => 
-    i.ref.includes(searchQuery) || 
-    i.rawNarration.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const formatCurrency = (kobo: number) => {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(kobo / 100);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric'
+    }).format(new Date(dateString));
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING': return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">Pending Review</span>;
+      case 'RESOLVED': return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Resolved</span>;
+      case 'FLAGGED': return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">Flagged</span>;
+      default: return null;
+    }
+  };
 
   return (
-    <PageReveal>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      <div className="sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#022c22] tracking-tight flex items-center gap-3">
-            Suspense Queue 
-            <span className="bg-[#fffbeb] text-[#b45309] border border-[#fcd34d] px-2.5 py-0.5 rounded text-sm font-bold flex items-center gap-1.5">
-              <ShieldWarning weight="fill" />
-              {SUSPENSE_ITEMS.length} Action Needed
-            </span>
-          </h1>
-          <p className="text-[#6a6c6c] mt-1">Resolve transactions that did not meet the AI auto-reconciliation threshold.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Suspense Queue</h1>
+          <p className="mt-2 text-sm text-gray-700">Payments that require manual review due to low AI confidence or closed accounts.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-[#e4e7e9] flex items-center bg-[#f7f9fb]">
-          <div className="relative max-w-sm w-full">
-            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbbdbd]" />
-            <input 
-              type="text"
-              placeholder="Search by Nomba Ref or Narration..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-4 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
-            />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {isLoading ? (
+          <div className="p-4">
+            <TableShimmer rows={10} />
           </div>
-        </div>
-
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Nomba Ref</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm">Reason</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">AI Confidence</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => (
-                <tr 
-                  key={item.id} 
-                  className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#fffbeb]/50 transition-colors group"
-                >
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="font-mono text-sm text-[#022c22] font-semibold">{item.ref}</div>
-                    <div className="text-xs text-[#6a6c6c] mt-1">{item.time}</div>
-                  </td>
-                  <td className="p-4 font-bold text-[#b45309] whitespace-nowrap">
-                    {item.amount}
-                  </td>
-                  <td className="p-4 text-sm text-[#022c22]">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
-                      <span>{item.reason}</span>
-                    </div>
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <Robot weight="fill" className={item.aiConfidence > 0.5 ? "text-amber-500" : "text-red-500"} />
-                      <span className="font-mono text-xs font-bold text-[#022c22]">
-                        {(item.aiConfidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-right whitespace-nowrap">
-                    <Button 
-                      onClick={() => setSelectedItem(item)}
-                      className="h-8 px-3 bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-none"
-                    >
-                      Resolve
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {filteredItems.length === 0 && (
+        ) : isError ? (
+          <div className="p-6 text-center text-red-600 bg-red-50">
+            Failed to load suspense queue. Please try again.
+          </div>
+        ) : !data?.items.length ? (
+          <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+            <WarningCircle className="h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">Queue is empty</h3>
+            <p className="mt-1">All payments have been successfully routed by the AI engine.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-[#6a6c6c]">
-                    <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
-                    <div className="font-bold text-[#022c22] text-lg">Queue is clear!</div>
-                    <div className="text-sm mt-1">No transactions are currently in suspense.</div>
-                  </td>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sender</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">Resolve</span></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredItems.map((item) => (
-            <div key={item.id} className="p-4 bg-[#fffbeb]/30">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="font-mono text-sm text-[#022c22] font-semibold">{item.ref}</div>
-                  <div className="text-xs text-[#6a6c6c] mt-0.5">{item.time}</div>
-                </div>
-                <div className="font-bold text-[#b45309]">{item.amount}</div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.items.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(item.created_at)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{item.sender_name || 'Unknown Sender'}</div>
+                      <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">{item.raw_narration}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">{item.reason}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(item.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
+                      {formatCurrency(item.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link href={`/dashboard/suspense/${item.id}`} className="text-blue-600 hover:text-blue-900 inline-flex items-center">
+                        Review <CaretRight className="ml-1 w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        
+        {data && data.total > 0 && (
+          <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(page - 1) * 20 + 1}</span> to <span className="font-medium">{Math.min(page * 20, data.total)}</span> of{' '}
+                  <span className="font-medium">{data.total}</span> results
+                </p>
               </div>
-              <div className="bg-white border border-[#fcd34d] p-3 rounded-lg text-sm text-[#92400e] mb-4">
-                <div className="flex items-center gap-2 font-bold mb-1">
-                  <Robot weight="fill" />
-                  AI Confidence: {(item.aiConfidence * 100).toFixed(0)}%
-                </div>
-                {item.reason}
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+                  <button onClick={() => setPage(p => p + 1)} disabled={page * 20 >= data.total} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Next</button>
+                </nav>
               </div>
-              <Button 
-                onClick={() => setSelectedItem(item)}
-                className="w-full h-10 justify-center bg-[#b45309] hover:bg-[#92400e] text-white font-bold"
-              >
-                Resolve Issue
-              </Button>
-            </div>
-          ))}
-          {filteredItems.length === 0 && (
-            <div className="p-12 text-center text-[#6a6c6c]">
-              <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
-              <div className="font-bold text-[#022c22] text-lg">Queue is clear!</div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Resolution Modal */}
-      <Modal 
-        isOpen={!!selectedItem} 
-        onClose={() => setSelectedItem(null)} 
-        title="Resolve Transaction"
-      >
-        {selectedItem && (
-          <div className="space-y-6">
-            
-            {/* Context Box */}
-            <div className="bg-[#f7f9fb] p-4 rounded-lg border border-[#e4e7e9]">
-              <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider mb-2">Raw Bank Narration</div>
-              <div className="font-mono text-sm text-[#022c22] font-semibold break-all bg-white p-2 border border-[#e4e7e9] rounded">
-                {selectedItem.rawNarration}
-              </div>
-              <div className="flex justify-between items-end mt-3">
-                <div className="text-xs text-[#6a6c6c]">Intended Wallet: <span className="font-mono text-[#022c22]">{selectedItem.walletNuban}</span></div>
-                <div className="font-bold text-lg text-[#022c22]">{selectedItem.amount}</div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-sm font-semibold text-[#022c22]">Select Resolution Action:</div>
-              
-              <button className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-[#10b981] hover:bg-[#f0fdf4] transition-all group flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-[#022c22] flex items-center gap-2">
-                    <CheckCircle weight="fill" className="text-[#10b981] group-hover:scale-110 transition-transform" />
-                    Force Accept to Wallet
-                  </div>
-                  <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Credit the funds to NUBAN {selectedItem.walletNuban}.</div>
-                </div>
-                <CaretRight className="text-[#bbbdbd] group-hover:text-[#10b981]" />
-              </button>
-
-              <button className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-red-400 hover:bg-red-50 transition-all group flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-[#022c22] flex items-center gap-2">
-                    <ArrowUUpLeft weight="bold" className="text-red-500 group-hover:scale-110 transition-transform" />
-                    Bounce / Refund
-                  </div>
-                  <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Reverse the transaction via Nomba automatically.</div>
-                </div>
-                <CaretRight className="text-[#bbbdbd] group-hover:text-red-500" />
-              </button>
             </div>
           </div>
         )}
-      </Modal>
-    </PageReveal>
+      </div>
+    </div>
   );
 }

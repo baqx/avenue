@@ -1,278 +1,123 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { MagnifyingGlass, Funnel, ArrowUpRight, ArrowDownLeft, Robot, CheckCircle, Info } from "@phosphor-icons/react";
-import { PageReveal } from "@/components/ui/PageReveal";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
-
-// Mock data
-const TRANSACTIONS = [
-  { 
-    id: "tx_10923", 
-    ref: "nomba_119920384", 
-    walletNuban: "0012345678",
-    type: "credit", 
-    amount: "₦45,000.00", 
-    desc: "School fees - SS2 term 2", 
-    rawNarration: "TRF/NOMBA/ADEBAYO/SCH_FEES/SS2_TERM2",
-    aiConfidence: 0.94,
-    status: "settled", 
-    time: "Oct 24, 10:45 AM" 
-  },
-  { 
-    id: "tx_10924", 
-    ref: "nomba_119920385", 
-    walletNuban: "0012345678",
-    type: "debit", 
-    amount: "₦12,000.00", 
-    desc: "Wallet sweep to main account", 
-    rawNarration: "SYSTEM/AUTO_SWEEP/MAIN_ACCT",
-    aiConfidence: null, // System generated, no AI needed
-    status: "settled", 
-    time: "Oct 24, 09:00 AM" 
-  },
-  { 
-    id: "tx_10925", 
-    ref: "nomba_119920386", 
-    walletNuban: "0012345679",
-    type: "credit", 
-    amount: "₦2,500.00", 
-    desc: "Unknown intent", 
-    rawNarration: "TRF/GTB/JOHN_DOE/1293810293",
-    aiConfidence: 0.31,
-    status: "suspense", 
-    time: "Oct 23, 04:12 PM" 
-  },
-];
+import React, { useState } from 'react';
+import { useGetGlobalTransactionsQuery } from '@/lib/api/ledgerApi';
+import { TableShimmer } from '@/components/ui/Shimmer';
+import { ArrowDownLeft, ArrowUpRight, Sparkle } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
 export default function TransactionsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTx, setSelectedTx] = useState<typeof TRANSACTIONS[0] | null>(null);
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError } = useGetGlobalTransactionsQuery({ page, limit: 20 });
 
-  const filteredTx = TRANSACTIONS.filter(t => 
-    t.ref.includes(searchQuery) || 
-    t.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.walletNuban.includes(searchQuery)
-  );
+  const formatCurrency = (kobo: number) => {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(kobo / 100);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric'
+    }).format(new Date(dateString));
+  };
 
   return (
-    <PageReveal>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      <div className="sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Global Ledger</h1>
-          <p className="text-[#6a6c6c] mt-1">Immutable double-entry log of all debits and credits.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Global Ledger</h1>
+          <p className="mt-2 text-sm text-gray-700">All inbound credits and outbound debits across all wallets.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-[#e4e7e9] flex flex-col sm:flex-row items-center gap-4 bg-[#f7f9fb]">
-          <div className="relative w-full sm:max-w-md">
-            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbbdbd]" />
-            <input 
-              type="text"
-              placeholder="Search by Nomba Ref, Wallet NUBAN, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-4 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
-            />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {isLoading ? (
+          <div className="p-4">
+            <TableShimmer rows={10} />
           </div>
-          <Button variant="outline" className="h-10 text-sm gap-2 border-[#e4e7e9] text-[#022c22] w-full sm:w-auto shrink-0">
-            <Funnel size={16} />
-            Filter by Wallet
-          </Button>
-        </div>
-
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Transaction</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Wallet (NUBAN)</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTx.map((tx) => (
-                <tr 
-                  key={tx.id} 
-                  onClick={() => setSelectedTx(tx)}
-                  className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
-                >
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'credit' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
-                        {tx.type === 'credit' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
-                      </div>
-                      <div>
-                        <div className="font-medium text-[#022c22]">{tx.desc}</div>
-                        <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">{tx.ref}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">
-                    <span className={tx.type === "credit" ? "text-[#059669]" : "text-[#022c22]"}>
-                      {tx.type === "credit" ? "+" : "-"}{tx.amount}
-                    </span>
-                  </td>
-                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">
-                    {tx.walletNuban}
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    {tx.status === "settled" && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                        SETTLED
-                      </span>
-                    )}
-                    {tx.status === "suspense" && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                        SUSPENSE
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{tx.time}</td>
-                </tr>
-              ))}
-              {filteredTx.length === 0 && (
+        ) : isError ? (
+          <div className="p-6 text-center text-red-600 bg-red-50">
+            Failed to load transactions. Please try again.
+          </div>
+        ) : !data?.items.length ? (
+          <div className="p-12 text-center text-gray-500">
+            <h3 className="text-lg font-medium text-gray-900">No transactions found</h3>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No transactions found.</td>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10"></th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avenue AI Context</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredTx.map((tx) => (
-            <div 
-              key={tx.id} 
-              onClick={() => setSelectedTx(tx)}
-              className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4] cursor-pointer"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'credit' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
-                    {tx.type === 'credit' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
-                  </div>
-                  <div>
-                    <div className="font-medium text-[#022c22]">{tx.desc}</div>
-                    <div className="text-[10px] font-mono text-[#6a6c6c] mt-0.5">{tx.ref}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between items-end mt-4">
-                <div className="text-xs text-[#6a6c6c]">
-                  Wallet: <span className="font-mono text-[#022c22]">{tx.walletNuban}</span>
-                </div>
-                <span className={`font-bold ${tx.type === "credit" ? "text-[#059669]" : "text-[#022c22]"}`}>
-                  {tx.type === "credit" ? "+" : "-"}{tx.amount}
-                </span>
-              </div>
-            </div>
-          ))}
-          {filteredTx.length === 0 && (
-            <div className="p-8 text-center text-[#6a6c6c]">No transactions found.</div>
-          )}
-        </div>
-      </div>
-
-      {/* Transaction Detail Modal */}
-      <Modal 
-        isOpen={!!selectedTx} 
-        onClose={() => setSelectedTx(null)} 
-        title="Transaction Details"
-      >
-        {selectedTx && (
-          <div className="space-y-6 pb-2">
-            <div className="text-center pb-6 border-b border-[#e4e7e9]">
-              <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider mb-2">
-                {selectedTx.type === 'credit' ? 'Received' : 'Sent'}
-              </div>
-              <div className="text-4xl font-bold text-[#022c22] tracking-tighter">
-                {selectedTx.amount}
-              </div>
-              <div className="mt-3 inline-flex">
-                {selectedTx.status === "settled" ? (
-                  <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                    SETTLED
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                    IN SUSPENSE
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-4 text-sm">
-              <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
-                <span className="text-[#6a6c6c]">Internal ID</span>
-                <span className="font-mono font-medium text-[#022c22]">{selectedTx.id}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
-                <span className="text-[#6a6c6c]">Nomba Ref</span>
-                <span className="font-mono font-medium text-[#022c22]">{selectedTx.ref}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
-                <span className="text-[#6a6c6c]">Wallet NUBAN</span>
-                <span className="font-mono font-medium text-[#022c22]">{selectedTx.walletNuban}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
-                <span className="text-[#6a6c6c]">Date & Time</span>
-                <span className="font-medium text-[#022c22]">{selectedTx.time}</span>
-              </div>
-            </div>
-
-            {selectedTx.aiConfidence !== null && (
-              <div className="mt-6 bg-[#022c22] rounded-xl p-5 border border-[#10b981]">
-                <div className="flex items-center gap-2 mb-4 text-[#10b981]">
-                  <Robot weight="fill" className="w-5 h-5" />
-                  <span className="font-bold text-sm">Avenue Intelligence Report</span>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-xs text-[#6ee7b7] mb-1">Raw Bank Narration</div>
-                    <div className="font-mono text-sm text-white bg-[#064e3b] p-2 rounded border border-[#10b981]/30 break-all">
-                      {selectedTx.rawNarration}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-xs text-[#6ee7b7] mb-1">Intent Resolution Confidence</div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-[#064e3b] rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${selectedTx.aiConfidence > 0.75 ? "bg-[#10b981]" : "bg-amber-400"}`} 
-                          style={{ width: `${selectedTx.aiConfidence * 100}%` }} 
-                        />
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.items.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className={cn("p-2 rounded-full", tx.type === 'CREDIT' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600')}>
+                        {tx.type === 'CREDIT' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                       </div>
-                      <span className="font-mono text-sm text-white font-bold shrink-0">
-                        {(selectedTx.aiConfidence * 100).toFixed(0)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(tx.created_at)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{tx.sender_name || 'System / Internal'}</div>
+                      <div className="text-xs text-gray-500 font-mono mt-1 text-wrap max-w-xs">{tx.id}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {tx.avenue_intelligence ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                            <Sparkle className="w-4 h-4 text-purple-500" weight="fill" />
+                            {tx.avenue_intelligence.extracted_intent || tx.avenue_intelligence.suggested_label}
+                          </div>
+                          {tx.avenue_intelligence.flags?.map(flag => (
+                            <span key={flag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 w-fit">
+                              {flag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">No AI Context</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold">
+                      <span className={tx.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
+                        {tx.type === 'CREDIT' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {selectedTx.status === "suspense" && (
-              <div className="bg-[#fffbeb] rounded-lg p-4 flex items-start gap-3 border border-[#fcd34d]">
-                <Info className="w-5 h-5 text-[#b45309] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-bold text-[#b45309]">Suspense Resolution Needed</h4>
-                  <p className="text-sm text-[#92400e] mt-1">This transaction did not meet the AI confidence threshold for auto-reconciliation. Please resolve it in the Suspense Queue.</p>
-                </div>
-              </div>
-            )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </Modal>
-    </PageReveal>
+        
+        {/* Pagination placeholder */}
+        {data && data.total > 0 && (
+          <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(page - 1) * 20 + 1}</span> to <span className="font-medium">{Math.min(page * 20, data.total)}</span> of{' '}
+                  <span className="font-medium">{data.total}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+                  <button onClick={() => setPage(p => p + 1)} disabled={page * 20 >= data.total} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">Next</button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

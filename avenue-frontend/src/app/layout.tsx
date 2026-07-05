@@ -34,6 +34,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: {
@@ -41,7 +43,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${jetbrains.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
