@@ -34,6 +34,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request, status
+from typing import Dict, Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,6 +51,7 @@ router = APIRouter()
 async def receive_nomba_webhook(
     developer_id: uuid.UUID,
     request: Request,
+    payload: Dict[str, Any],
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -65,7 +67,6 @@ async def receive_nomba_webhook(
     8. Evaluate agents
     9. Dispatch enriched webhook to developer
     """
-    payload = await request.json()
 
     # ── Step 1: Validate HMAC signature ────────────────────────────────────
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer_id))
