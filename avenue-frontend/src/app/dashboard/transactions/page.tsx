@@ -7,12 +7,13 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
 import { useGetGlobalTransactionsQuery } from "@/lib/api/ledgerApi";
+import { TableShimmer } from "@/components/ui/Shimmer";
 
 export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTx, setSelectedTx] = useState<any | null>(null);
   
-  const { data: txData } = useGetGlobalTransactionsQuery({ page: 1, limit: 100 });
+  const { data: txData, isLoading: isTxLoading } = useGetGlobalTransactionsQuery({ page: 1, limit: 100 });
   const rawTxs = txData?.items || [];
 
   const filteredTx = rawTxs.filter(t => 
@@ -49,69 +50,75 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Transaction</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Wallet (NUBAN)</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTx.map((tx) => {
-                const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
-                return (
-                <tr 
-                  key={tx.id} 
-                  onClick={() => setSelectedTx(tx)}
-                  className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
-                >
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'CREDIT' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
-                        {tx.type === 'CREDIT' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
-                      </div>
-                      <div>
-                        <div className="font-medium text-[#022c22]">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</div>
-                        <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">{tx.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">
-                    <span className={tx.type === "CREDIT" ? "text-[#059669]" : "text-[#022c22]"}>
-                      {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </span>
-                  </td>
-                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">
-                    {tx.wallet_id.substring(0, 8)}...
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    {!isSuspense && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                        SETTLED
-                      </span>
-                    )}
-                    {isSuspense && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                        SUSPENSE
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
-                </tr>
-              )})}
-              {filteredTx.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No transactions found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {isTxLoading ? (
+          <TableShimmer rows={6} />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-[#e4e7e9]">
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Transaction</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Wallet (NUBAN)</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTx.map((tx) => {
+                    const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
+                    return (
+                    <tr 
+                      key={tx.id} 
+                      onClick={() => setSelectedTx(tx)}
+                      className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
+                    >
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'CREDIT' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
+                            {tx.type === 'CREDIT' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
+                          </div>
+                          <div>
+                            <div className="font-medium text-[#022c22]">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</div>
+                            <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">{tx.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">
+                        <span className={tx.type === "CREDIT" ? "text-[#059669]" : "text-[#022c22]"}>
+                          {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                      </td>
+                      <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">
+                        {tx.wallet_id.substring(0, 8)}...
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        {!isSuspense && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                            SETTLED
+                          </span>
+                        )}
+                        {isSuspense && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
+                            SUSPENSE
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  )})}
+                  {filteredTx.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No transactions found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">

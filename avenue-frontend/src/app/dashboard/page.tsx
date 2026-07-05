@@ -11,11 +11,12 @@ import { Button } from "@/components/ui/Button";
 
 import { useGetOverviewStatsQuery } from "@/lib/api/analyticsApi";
 import { useGetGlobalTransactionsQuery } from "@/lib/api/ledgerApi";
+import { CardShimmer, TableShimmer } from "@/components/ui/Shimmer";
 
 export default function DashboardOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: stats } = useGetOverviewStatsQuery();
-  const { data: txData } = useGetGlobalTransactionsQuery({ page: 1, limit: 5 });
+  const { data: stats, isLoading: isStatsLoading } = useGetOverviewStatsQuery();
+  const { data: txData, isLoading: isTxLoading } = useGetGlobalTransactionsQuery({ page: 1, limit: 5 });
   const recentTxs = txData?.items || [];
 
   return (
@@ -34,83 +35,101 @@ export default function DashboardOverview() {
 
       {/* Metrics via SnapScroll */}
       <SnapScroll className="mb-10">
-        {/* Card 1: Balance */}
-        <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-          <div className="flex items-center gap-2 text-[#6a6c6c]">
-            <Wallet className="w-5 h-5" />
-            <span className="font-semibold text-sm">Total Ledger Balance</span>
-          </div>
-          <div className="text-3xl font-bold text-[#022c22] mt-4">
-            ₦{((stats?.total_volume_kobo || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-        </div>
+        {isStatsLoading ? (
+          <>
+            <CardShimmer />
+            <CardShimmer />
+            <CardShimmer />
+          </>
+        ) : (
+          <>
+            {/* Card 1: Balance */}
+            <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
+              <div className="flex items-center gap-2 text-[#6a6c6c]">
+                <Wallet className="w-5 h-5" />
+                <span className="font-semibold text-sm">Total Ledger Balance</span>
+              </div>
+              <div className="text-3xl font-bold text-[#022c22] mt-4">
+                ₦{((stats?.total_volume_kobo || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
 
-        {/* Card 2: Wallets */}
-        <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-          <div className="flex items-center gap-2 text-[#6a6c6c]">
-            <ArrowsLeftRight className="w-5 h-5" />
-            <span className="font-semibold text-sm">Active Wallets</span>
-          </div>
-          <div className="text-3xl font-bold text-[#022c22] mt-4">{stats?.active_wallets || 0}</div>
-        </div>
+            {/* Card 2: Wallets */}
+            <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
+              <div className="flex items-center gap-2 text-[#6a6c6c]">
+                <ArrowsLeftRight className="w-5 h-5" />
+                <span className="font-semibold text-sm">Active Wallets</span>
+              </div>
+              <div className="text-3xl font-bold text-[#022c22] mt-4">{stats?.active_wallets || 0}</div>
+            </div>
 
-        {/* Card 3: Suspense */}
-        <div className="bg-[#fffbeb] rounded-xl border border-[#fcd34d] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-          <div className="flex items-center gap-2 text-[#b45309]">
-            <ShieldWarning className="w-5 h-5" />
-            <span className="font-semibold text-sm">Action Required (Suspense)</span>
-          </div>
-          <div className="text-3xl font-bold text-[#b45309] mt-4">{stats?.pending_suspense_count || 0} items</div>
-        </div>
+            {/* Card 3: Suspense */}
+            <div className="bg-[#fffbeb] rounded-xl border border-[#fcd34d] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
+              <div className="flex items-center gap-2 text-[#b45309]">
+                <ShieldWarning className="w-5 h-5" />
+                <span className="font-semibold text-sm">Action Required (Suspense)</span>
+              </div>
+              <div className="text-3xl font-bold text-[#b45309] mt-4">{stats?.pending_suspense_count || 0} items</div>
+            </div>
+          </>
+        )}
       </SnapScroll>
 
       {/* Recent Activity Table */}
-      <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-[#e4e7e9]">
-          <h2 className="text-lg font-bold text-[#022c22]">Recent Activity</h2>
+      {/* Recent Activity Table */}
+      {isTxLoading ? (
+        <div className="mt-8">
+          <h2 className="text-lg font-bold text-[#022c22] mb-4">Recent Activity</h2>
+          <TableShimmer rows={5} />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f7f9fb] border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Description</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTxs.length === 0 ? (
-                <tr><td colSpan={4} className="p-4 text-center text-[#6a6c6c]">No recent activity</td></tr>
-              ) : recentTxs.map((tx) => {
-                const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
-                return (
-                  <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
-                    <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</td>
-                    <td className="p-4 whitespace-nowrap">
-                      <span className={tx.type === "CREDIT" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
-                        {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </span>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      {isSuspense ? (
-                        <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                          SUSPENSE
+      ) : (
+        <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[#e4e7e9]">
+            <h2 className="text-lg font-bold text-[#022c22]">Recent Activity</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f7f9fb] border-b border-[#e4e7e9]">
+                  <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Description</th>
+                  <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
+                  <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                  <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentTxs.length === 0 ? (
+                  <tr><td colSpan={4} className="p-4 text-center text-[#6a6c6c]">No recent activity</td></tr>
+                ) : recentTxs.map((tx) => {
+                  const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
+                  return (
+                    <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
+                      <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</td>
+                      <td className="p-4 whitespace-nowrap">
+                        <span className={tx.type === "CREDIT" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
+                          {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                          SUCCESS
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        {isSuspense ? (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
+                            SUSPENSE
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                            SUCCESS
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Reusable Modal Demo */}
       <Modal 

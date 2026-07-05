@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/Button";
 
 import { useGetAgentsQuery, useToggleAgentMutation } from "@/lib/api/agentsApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
+import { TableShimmer } from "@/components/ui/Shimmer";
 
 export default function AgentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const { data: agentsData } = useGetAgentsQuery({ page: 1, limit: 100 });
+  const { data: agentsData, isLoading: isAgentsLoading } = useGetAgentsQuery({ page: 1, limit: 100 });
   const [toggleAgent] = useToggleAgentMutation();
   const toast = useToast();
 
@@ -66,62 +67,68 @@ export default function AgentsPage() {
           </div>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Agent Name</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Trigger Condition</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Action</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Last Fired</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAgents.map((agent) => (
-                <tr 
-                  key={agent.id} 
-                  onClick={() => setSelectedAgent(agent)}
-                  className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
-                >
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#f0fdf4] text-[#059669] flex items-center justify-center shrink-0">
-                        <GitFork weight="bold" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-[#022c22]">{agent.name}</div>
-                        <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">Wallet: {agent.wallet_id.substring(0, 8)}...</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    <span className="font-mono text-xs bg-[#f7f9fb] text-[#022c22] border border-[#e4e7e9] px-2 py-1 rounded">
-                      {agent.trigger} {agent.threshold ? `> ${agent.threshold}` : ''}
-                    </span>
-                  </td>
-                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap text-sm">
-                    {agent.action}
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    {agent.is_active ? (
-                      <ToggleRight weight="fill" className="w-8 h-8 text-[#10b981]" onClick={(e) => handleToggle(agent, e)} />
-                    ) : (
-                      <ToggleLeft weight="fill" className="w-8 h-8 text-[#bbbdbd]" onClick={(e) => handleToggle(agent, e)} />
-                    )}
-                  </td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{agent.last_triggered_at ? new Date(agent.last_triggered_at).toLocaleString() : "Never"}</td>
-                </tr>
-              ))}
-              {filteredAgents.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No agents found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {isAgentsLoading ? (
+          <TableShimmer rows={4} />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-[#e4e7e9]">
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Agent Name</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Trigger Condition</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Action</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Last Fired</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAgents.map((agent) => (
+                    <tr 
+                      key={agent.id} 
+                      onClick={() => setSelectedAgent(agent)}
+                      className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
+                    >
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#f0fdf4] text-[#059669] flex items-center justify-center shrink-0">
+                            <GitFork weight="bold" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-[#022c22]">{agent.name}</div>
+                            <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">Wallet: {agent.wallet_id.substring(0, 8)}...</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        <span className="font-mono text-xs bg-[#f7f9fb] text-[#022c22] border border-[#e4e7e9] px-2 py-1 rounded">
+                          {agent.trigger} {agent.threshold ? `> ${agent.threshold}` : ''}
+                        </span>
+                      </td>
+                      <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap text-sm">
+                        {agent.action}
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        {agent.is_active ? (
+                          <ToggleRight weight="fill" className="w-8 h-8 text-[#10b981]" onClick={(e) => handleToggle(agent, e)} />
+                        ) : (
+                          <ToggleLeft weight="fill" className="w-8 h-8 text-[#bbbdbd]" onClick={(e) => handleToggle(agent, e)} />
+                        )}
+                      </td>
+                      <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{agent.last_triggered_at ? new Date(agent.last_triggered_at).toLocaleString() : "Never"}</td>
+                    </tr>
+                  ))}
+                  {filteredAgents.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No agents found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">

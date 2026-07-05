@@ -9,11 +9,12 @@ import { Modal } from "@/components/ui/Modal";
 import { useGetWalletsQuery, useCreateWalletMutation } from "@/lib/api/walletsApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 import { useRouter } from "next/navigation";
+import { TableShimmer } from "@/components/ui/Shimmer";
 
 export default function WalletsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: walletsData } = useGetWalletsQuery({ page: 1, limit: 100 });
+  const { data: walletsData, isLoading: isWalletsLoading } = useGetWalletsQuery({ page: 1, limit: 100 });
   const [createWallet, { isLoading: isCreating }] = useCreateWalletMutation();
   const [formData, setFormData] = useState({ customer_reference: '', first_name: '', last_name: '', email: '', label: '', system_prompt: '' });
   const toast = useToast();
@@ -64,66 +65,80 @@ export default function WalletsPage() {
           </div>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">NUBAN</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Label</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Balance</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Created</th>
-              </tr>
-            </thead>
-            <tbody>
+        {isWalletsLoading ? (
+          <TableShimmer rows={5} />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-[#e4e7e9]">
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">NUBAN</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Label</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Balance</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredWallets.map((wallet) => (
+                    <tr key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
+                      <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.account_number}</td>
+                      <td className="p-4 text-[#022c22] whitespace-nowrap font-medium">{wallet.label}</td>
+                      <td className="p-4 whitespace-nowrap">
+                        {wallet.status === "ACTIVE" && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                            ACTIVE
+                          </span>
+                        )}
+                        {wallet.status === "FROZEN" && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                            FROZEN
+                          </span>
+                        )}
+                        {wallet.status === "CLOSED" && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
+                            CLOSED
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(wallet.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                  {filteredWallets.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No wallets found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards (Instead of overflowing table) */}
+            <div className="md:hidden divide-y divide-[#e4e7e9]">
               {filteredWallets.map((wallet) => (
-                <tr key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
-                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.account_number}</td>
-                  <td className="p-4 text-[#022c22] whitespace-nowrap font-medium">{wallet.label}</td>
-                  <td className="p-4 whitespace-nowrap">
-                    {wallet.status === "ACTIVE" && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                        ACTIVE
-                      </span>
-                    )}
-                    {wallet.status === "FROZEN" && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
-                        FROZEN
-                      </span>
-                    )}
-                    {wallet.status === "CLOSED" && (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
-                        CLOSED
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(wallet.created_at).toLocaleDateString()}</td>
-                </tr>
+                <div key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="p-4 hover:bg-[#f7f9fb] transition-colors cursor-pointer">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-medium text-[#022c22]">{wallet.label}</div>
+                      <div className="font-mono text-sm text-[#6a6c6c] mt-0.5">{wallet.account_number}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-[#022c22]">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                      <div className="mt-1">
+                        {wallet.status === "ACTIVE" && <span className="text-[10px] font-bold text-[#059669] bg-[#f0fdf4] px-2 py-0.5 rounded border border-[#10b981]/30">ACTIVE</span>}
+                        {wallet.status === "FROZEN" && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">FROZEN</span>}
+                        {wallet.status === "CLOSED" && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">CLOSED</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
               {filteredWallets.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No wallets found.</td>
-                </tr>
+                <div className="p-8 text-center text-[#6a6c6c]">No wallets found.</div>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards (Instead of overflowing table) */}
-        <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredWallets.map((wallet) => (
-            <div key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4] cursor-pointer">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-mono font-medium text-[#022c22]">{wallet.account_number}</span>
-                {wallet.status === "ACTIVE" && <span className="text-[10px] uppercase font-bold text-[#059669]">ACTIVE</span>}
-                {wallet.status === "FROZEN" && <span className="text-[10px] uppercase font-bold text-blue-600">FROZEN</span>}
-                {wallet.status === "CLOSED" && <span className="text-[10px] uppercase font-bold text-red-600">CLOSED</span>}
-              </div>
-              <div className="font-medium text-[#022c22] mb-1">{wallet.label}</div>
-              <div className="flex justify-between items-end mt-4">
-                <span className="text-[#6a6c6c] text-xs">{new Date(wallet.created_at).toLocaleDateString()}</span>
                 <span className="font-semibold text-[#022c22]">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>

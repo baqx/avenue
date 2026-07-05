@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/Button";
 
 import { useGetSuspenseItemsQuery, useResolveSuspenseMutation } from "@/lib/api/suspenseApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
+import { TableShimmer } from "@/components/ui/Shimmer";
 
 export default function SuspensePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   
-  const { data: suspenseData } = useGetSuspenseItemsQuery({ page: 1, limit: 100, status: 'PENDING' });
+  const { data: suspenseData, isLoading: isSuspenseLoading } = useGetSuspenseItemsQuery({ page: 1, limit: 100, status: 'PENDING' });
   const [resolveSuspense] = useResolveSuspenseMutation();
   const toast = useToast();
 
@@ -65,69 +66,75 @@ export default function SuspensePage() {
           </div>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white border-b border-[#e4e7e9]">
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Nomba Ref</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm">Reason</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">AI Confidence</th>
-                <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => {
-                const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
-                return (
-                <tr 
-                  key={item.id} 
-                  className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#fffbeb]/50 transition-colors group"
-                >
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
-                    <div className="text-xs text-[#6a6c6c] mt-1">{new Date(item.created_at).toLocaleDateString()}</div>
-                  </td>
-                  <td className="p-4 font-bold text-[#b45309] whitespace-nowrap">
-                    ₦{(item.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="p-4 text-sm text-[#022c22]">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
-                      <span>{item.reason}</span>
-                    </div>
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <Robot weight="fill" className={confScore > 0.5 ? "text-amber-500" : "text-red-500"} />
-                      <span className="font-mono text-xs font-bold text-[#022c22]">
-                        {(confScore * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-right whitespace-nowrap">
-                    <Button 
-                      onClick={() => setSelectedItem(item)}
-                      className="h-8 px-3 bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-none"
+        {isSuspenseLoading ? (
+          <TableShimmer rows={4} />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-[#e4e7e9]">
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Nomba Ref</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm">Reason</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">AI Confidence</th>
+                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.map((item) => {
+                    const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
+                    return (
+                    <tr 
+                      key={item.id} 
+                      className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#fffbeb]/50 transition-colors group"
                     >
-                      Resolve
-                    </Button>
-                  </td>
-                </tr>
-              )})}
-              {filteredItems.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-[#6a6c6c]">
-                    <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
-                    <div className="font-bold text-[#022c22] text-lg">Queue is clear!</div>
-                    <div className="text-sm mt-1">No transactions are currently in suspense.</div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
+                        <div className="text-xs text-[#6a6c6c] mt-1">{new Date(item.created_at).toLocaleDateString()}</div>
+                      </td>
+                      <td className="p-4 font-bold text-[#b45309] whitespace-nowrap">
+                        ₦{(item.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="p-4 text-sm text-[#022c22]">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
+                          <span>{item.reason}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Robot weight="fill" className={confScore > 0.5 ? "text-amber-500" : "text-red-500"} />
+                          <span className="font-mono text-xs font-bold text-[#022c22]">
+                            {(confScore * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <Button 
+                          onClick={() => setSelectedItem(item)}
+                          className="h-8 px-3 bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-none"
+                        >
+                          Resolve
+                        </Button>
+                      </td>
+                    </tr>
+                  )})}
+                  {filteredItems.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-[#6a6c6c]">
+                        <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
+                        <div className="font-bold text-[#022c22] text-lg">Queue is clear!</div>
+                        <div className="text-sm mt-1">No transactions are currently in suspense.</div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">

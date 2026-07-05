@@ -9,14 +9,15 @@ import { Modal } from "@/components/ui/Modal";
 import { useGetWebhookLogsQuery } from "@/lib/api/webhooksApi";
 import { useGetWebhookConfigQuery, useConfigureWebhookMutation } from "@/lib/api/developerApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
+import { TableShimmer, CardShimmer } from "@/components/ui/Shimmer";
 
 export default function WebhooksPage() {
   const [activeTab, setActiveTab] = useState<"config" | "logs">("config");
   const [copied, setCopied] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
 
-  const { data: logsData } = useGetWebhookLogsQuery({ page: 1, limit: 100 });
-  const { data: configData } = useGetWebhookConfigQuery();
+  const { data: logsData, isLoading: isLogsLoading } = useGetWebhookLogsQuery({ page: 1, limit: 100 });
+  const { data: configData, isLoading: isConfigLoading } = useGetWebhookConfigQuery();
   const [configureWebhook, { isLoading: isSaving }] = useConfigureWebhookMutation();
   const toast = useToast();
 
@@ -88,6 +89,13 @@ export default function WebhooksPage() {
               <div className="h-px bg-[#e4e7e9] w-full" />
 
               {/* Outbound Config */}
+              {isConfigLoading ? (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-[#022c22] mb-1">Outbound Webhook (To Your App)</h3>
+                  <CardShimmer />
+                  <CardShimmer />
+                </div>
+              ) : (
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -139,57 +147,64 @@ export default function WebhooksPage() {
                   </div>
                 </div>
               </div>
+              )}
 
             </div>
           )}
 
           {activeTab === "logs" && (
             <div className="-mx-6 -my-6">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#f7f9fb] border-b border-[#e4e7e9]">
-                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Event Type</th>
-                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Retries</th>
-                      <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((log) => (
-                      <tr 
-                        key={log.id} 
-                        onClick={() => setSelectedLog(log)}
-                        className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f7f9fb] transition-colors cursor-pointer"
-                      >
-                        <td className="p-4 font-mono text-sm text-[#022c22] font-semibold whitespace-nowrap">
-                          {log.event_type}
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          {log.status === "DELIVERED" ? (
-                            <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 flex items-center gap-1.5 w-max">
-                              <CheckCircle weight="fill" /> DELIVERED
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 flex items-center gap-1.5 w-max">
-                              <Warning weight="fill" /> FAILED
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 text-sm text-[#6a6c6c] whitespace-nowrap">
-                          {log.attempt_count > 0 ? log.attempt_count : "-"}
-                        </td>
-                        <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
+              {isLogsLoading ? (
+                <div className="p-6">
+                  <TableShimmer rows={5} />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[#f7f9fb] border-b border-[#e4e7e9]">
+                        <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Event Type</th>
+                        <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
+                        <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Retries</th>
+                        <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Time</th>
                       </tr>
-                    ))}
-                    {logs.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="p-8 text-center text-[#6a6c6c]">No logs found.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {logs.map((log) => (
+                        <tr 
+                          key={log.id} 
+                          onClick={() => setSelectedLog(log)}
+                          className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f7f9fb] transition-colors cursor-pointer"
+                        >
+                          <td className="p-4 font-mono text-sm text-[#022c22] font-semibold whitespace-nowrap">
+                            {log.event_type}
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            {log.status === "DELIVERED" ? (
+                              <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 flex items-center gap-1.5 w-max">
+                                <CheckCircle weight="fill" /> DELIVERED
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 flex items-center gap-1.5 w-max">
+                                <Warning weight="fill" /> FAILED
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-[#6a6c6c] whitespace-nowrap">
+                            {log.attempt_count > 0 ? log.attempt_count : "-"}
+                          </td>
+                          <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                      {logs.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center text-[#6a6c6c]">No logs found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
