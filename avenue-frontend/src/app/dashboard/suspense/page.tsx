@@ -7,15 +7,20 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
 import { useGetSuspenseItemsQuery, useResolveSuspenseMutation } from "@/lib/api/suspenseApi";
+import { useGetWalletsQuery } from "@/lib/api/walletsApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 import { TableShimmer } from "@/components/ui/Shimmer";
 
 export default function SuspensePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [isSelectingWallet, setIsSelectingWallet] = useState(false);
+  const [selectedWalletId, setSelectedWalletId] = useState("");
   
   const { data: suspenseData, isLoading: isSuspenseLoading } = useGetSuspenseItemsQuery({ page: 1, limit: 100, status: 'PENDING' });
-  const [resolveSuspense] = useResolveSuspenseMutation();
+  const { data: walletsData } = useGetWalletsQuery({ page: 1, limit: 100 });
+  const wallets = walletsData?.items || [];
+  const [resolveSuspense, { isLoading: isResolving }] = useResolveSuspenseMutation();
   const toast = useToast();
 
   const rawItems = suspenseData?.items || [];
@@ -26,12 +31,18 @@ export default function SuspensePage() {
     (i.account_number && i.account_number.includes(searchQuery))
   );
 
-  const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS') => {
+  const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS', target_wallet_id?: string) => {
     if (!selectedItem) return;
+    if (action === 'CREDIT_WALLET' && !target_wallet_id) {
+      toast.error('Validation Error', 'Please select a wallet first.');
+      return;
+    }
     try {
-      await resolveSuspense({ id: selectedItem.id, body: { action } }).unwrap();
+      await resolveSuspense({ id: selectedItem.id, body: { action, target_wallet_id } }).unwrap();
       toast.success('Resolved', `Transaction successfully ${action === 'CREDIT_WALLET' ? 'credited' : 'dismissed'}.`);
       setSelectedItem(null);
+      setIsSelectingWallet(false);
+      setSelectedWalletId("");
     } catch (err: any) {
       toast.error('Failed', err?.data?.error?.message || err?.data?.detail || 'Could not resolve transaction.');
     }
@@ -166,7 +177,11 @@ export default function SuspensePage() {
       {/* Resolution Modal */}
       <Modal 
         isOpen={!!selectedItem} 
-        onClose={() => setSelectedItem(null)} 
+        onClose={() => {
+          setSelectedItem(null);
+          setIsSelectingWallet(false);
+          setSelectedWalletId("");
+        }} 
         title="Resolve Transaction"
       >
         {selectedItem && (
@@ -187,18 +202,45 @@ export default function SuspensePage() {
             <div className="space-y-3">
               <div className="text-sm font-semibold text-[#022c22]">Select Resolution Action:</div>
               
-              <button onClick={() => handleResolve('CREDIT_WALLET')} className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-[#10b981] hover:bg-[#f0fdf4] transition-all group flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-[#022c22] flex items-center gap-2">
-                    <CheckCircle weight="fill" className="text-[#10b981] group-hover:scale-110 transition-transform" />
-                    Force Accept to Wallet
+              {!isSelectingWallet ? (
+                <button onClick={() => setIsSelectingWallet(true)} className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-[#10b981] hover:bg-[#f0fdf4] transition-all group flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-[#022c22] flex items-center gap-2">
+                      <CheckCircle weight="fill" className="text-[#10b981] group-hover:scale-110 transition-transform" />
+                      Force Accept to Wallet
+                    </div>
+                    <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Credit the funds to a specific wallet.</div>
                   </div>
-                  <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Credit the funds to NUBAN {selectedItem.account_number}.</div>
+                  <CaretRight className="text-[#bbbdbd] group-hover:text-[#10b981]" />
+                </button>
+              ) : (
+                <div className="p-4 rounded-xl border border-[#10b981]/50 bg-[#f0fdf4] space-y-4">
+                  <div className="font-bold text-[#022c22] flex items-center gap-2">
+                    <CheckCircle weight="fill" className="text-[#10b981]" />
+                    Select Target Wallet
+                  </div>
+                  <select 
+                    value={selectedWalletId} 
+                    onChange={e => setSelectedWalletId(e.target.value)}
+                    className="w-full h-11 px-3 rounded-lg border border-[#e4e7e9] text-sm outline-none bg-white focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
+                  >
+                    <option value="">-- Choose a wallet --</option>
+                    {wallets.map(w => (
+                      <option key={w.id} value={w.id}>
+                        {w.customer_reference} ({w.first_name} {w.last_name}) - {w.account_number}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setIsSelectingWallet(false)} variant="outline" className="flex-1 bg-white" disabled={isResolving}>Cancel</Button>
+                    <Button onClick={() => handleResolve('CREDIT_WALLET', selectedWalletId)} className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white" disabled={isResolving}>
+                      {isResolving ? "Resolving..." : "Confirm Credit"}
+                    </Button>
+                  </div>
                 </div>
-                <CaretRight className="text-[#bbbdbd] group-hover:text-[#10b981]" />
-              </button>
+              )}
 
-              <button onClick={() => handleResolve('DISMISS')} className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-red-400 hover:bg-red-50 transition-all group flex items-center justify-between">
+              <button onClick={() => handleResolve('DISMISS')} disabled={isResolving} className={`w-full text-left p-4 rounded-xl border border-[#e4e7e9] transition-all group flex items-center justify-between ${isResolving ? 'opacity-50 cursor-not-allowed' : 'hover:border-red-400 hover:bg-red-50'}`}>
                 <div>
                   <div className="font-bold text-[#022c22] flex items-center gap-2">
                     <ArrowUUpLeft weight="bold" className="text-red-500 group-hover:scale-110 transition-transform" />

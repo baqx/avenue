@@ -12,7 +12,7 @@ Avenue has two webhook directions: **inbound** (Nomba → Avenue) and **outbound
 Avenue gives you a unique inbound URL per developer:
 
 ```
-https://api.avenue.so/v1/webhooks/inbound/dev_xxxx
+https://johnajayi-avenue.hf.space/v1/webhooks/inbound/dev_xxxx
 ```
 
 Paste this into your Nomba dashboard. Every payment event Nomba fires will be received, validated, and processed by Avenue.
@@ -32,7 +32,7 @@ Paste this into your Nomba dashboard. Every payment event Nomba fires will be re
 Register your outbound URL via the API or dashboard:
 
 ```bash
-curl -X PUT https://api.avenue.so/v1/developers/webhook \
+curl -X PUT https://johnajayi-avenue.hf.space/v1/developers/webhook \
   -H "x-api-key: ave_live_xxxx" \
   -d '{ "url": "https://yourapp.io/avenue-events" }'
 ```

@@ -9,7 +9,7 @@ This guide walks you through the full Avenue flow from account creation to recei
 
 ## Step 1: Sign up
 
-Create a developer account at [avenue.so/signup](https://avenue.so/signup). You'll receive a verification email — click the link to activate your account.
+Create a developer account at [avenue-cloud.vercel.app/signup](https://avenue-cloud.vercel.app/signup). You'll receive a verification email — click the link to activate your account.
 
 Upon verification, two API keys are automatically generated:
 - `ave_live_xxxxxxxxxx` — for production
@@ -24,7 +24,7 @@ Go to **Settings → Nomba Integration** in your dashboard and paste your Nomba 
 Avenue generates a unique inbound URL per developer:
 
 ```
-https://api.avenue.so/v1/webhooks/inbound/dev_xxxx
+https://johnajayi-avenue.hf.space/v1/webhooks/inbound/dev_xxxx
 ```
 
 Paste this into your Nomba dashboard as the webhook destination. All Nomba payment events will now flow through Avenue.
@@ -32,7 +32,7 @@ Paste this into your Nomba dashboard as the webhook destination. All Nomba payme
 ## Step 4: Create your first wallet
 
 ```bash
-curl -X POST https://api.avenue.so/v1/wallets \
+curl -X POST https://johnajayi-avenue.hf.space/v1/wallets \
   -H "x-api-key: ave_live_xxxx" \
   -H "Content-Type: application/json" \
   -d '{
@@ -60,7 +60,7 @@ Share the `nuban` with your user. They can now receive money at this account num
 Tell Avenue where to send enriched events after processing:
 
 ```bash
-curl -X PUT https://api.avenue.so/v1/developers/webhook \
+curl -X PUT https://johnajayi-avenue.hf.space/v1/developers/webhook \
   -H "x-api-key: ave_live_xxxx" \
   -H "Content-Type: application/json" \
   -d '{ "url": "https://yourapp.io/avenue-events" }'

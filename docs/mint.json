@@ -16,12 +16,12 @@
   },
   "topbarCtaButton": {
     "name": "Get started free",
-    "url": "https://avenue.so/signup"
+    "url": "https://avenue-cloud.vercel.app/signup"
   },
   "topbarLinks": [
     {
       "name": "Dashboard",
-      "url": "https://dashboard.avenue.so"
+      "url": "https://avenue-cloud.vercel.app/dashboard"
     }
   ],
   "tabs": [
@@ -116,7 +116,7 @@
     "github": "https://github.com/baqx/avenue"
   },
   "api": {
-    "baseUrl": "https://api.avenue.so",
+    "baseUrl": "https://johnajayi-avenue.hf.space",
     "auth": {
       "method": "key",
       "name": "x-api-key"

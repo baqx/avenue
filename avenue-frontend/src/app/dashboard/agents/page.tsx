@@ -6,7 +6,8 @@ import { PageReveal } from "@/components/ui/PageReveal";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-import { useGetAgentsQuery, useToggleAgentMutation } from "@/lib/api/agentsApi";
+import { useGetAgentsQuery, useToggleAgentMutation, useCreateAgentMutation } from "@/lib/api/agentsApi";
+import { useGetWalletsQuery } from "@/lib/api/walletsApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 import { TableShimmer } from "@/components/ui/Shimmer";
 
@@ -16,8 +17,61 @@ export default function AgentsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data: agentsData, isLoading: isAgentsLoading } = useGetAgentsQuery({ page: 1, limit: 100 });
+  const { data: walletsData } = useGetWalletsQuery({ page: 1, limit: 100 });
   const [toggleAgent] = useToggleAgentMutation();
+  const [createAgent, { isLoading: isCreating }] = useCreateAgentMutation();
   const toast = useToast();
+
+  const wallets = walletsData?.items || [];
+
+  const [formData, setFormData] = useState({
+    wallet_id: '',
+    name: '',
+    trigger: 'BALANCE_ABOVE',
+    threshold: '',
+    action: 'SWEEP_FULL',
+    destination_wallet_id: '',
+    sweep_amount: ''
+  });
+
+  const handleCreate = async () => {
+    if (!formData.wallet_id || !formData.name) {
+      toast.error('Validation Error', 'Source Wallet and Agent Name are required.');
+      return;
+    }
+    try {
+      const payload: any = {
+        wallet_id: formData.wallet_id,
+        name: formData.name,
+        trigger: formData.trigger,
+        action: formData.action
+      };
+      if (formData.trigger === 'BALANCE_ABOVE' || formData.trigger === 'BALANCE_BELOW') {
+        payload.threshold = Number(formData.threshold);
+      }
+      if (formData.action === 'SWEEP_FULL' || formData.action === 'PARTIAL_SWEEP') {
+        payload.destination_wallet_id = formData.destination_wallet_id;
+      }
+      if (formData.action === 'PARTIAL_SWEEP') {
+        payload.sweep_amount = Number(formData.sweep_amount);
+      }
+      
+      await createAgent(payload).unwrap();
+      toast.success('Agent Created', 'Your automation agent is now active.');
+      setIsCreateModalOpen(false);
+      setFormData({
+        wallet_id: '',
+        name: '',
+        trigger: 'BALANCE_ABOVE',
+        threshold: '',
+        action: 'SWEEP_FULL',
+        destination_wallet_id: '',
+        sweep_amount: ''
+      });
+    } catch (err: any) {
+      toast.error('Failed', err?.data?.error?.message || err?.data?.detail || 'Could not create agent.');
+    }
+  };
 
   const rawAgents = agentsData?.items || [];
   const filteredAgents = rawAgents.filter(a => 
@@ -28,7 +82,7 @@ export default function AgentsPage() {
   const handleToggle = async (agent: any, e?: any) => {
     if (e) e.stopPropagation();
     try {
-      await toggleAgent({ id: agent.id, is_active: !agent.is_active }).unwrap();
+      await toggleAgent({ walletId: agent.wallet_id, id: agent.id, is_active: !agent.is_active }).unwrap();
       toast.success('Agent Updated', `${agent.name} is now ${!agent.is_active ? 'active' : 'disabled'}.`);
       if (selectedAgent?.id === agent.id) {
         setSelectedAgent({ ...selectedAgent, is_active: !agent.is_active });
@@ -237,40 +291,107 @@ export default function AgentsPage() {
         onClose={() => setIsCreateModalOpen(false)} 
         title="Create Account Agent"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[#022c22]">Agent Name</label>
+            <label className="text-sm font-medium text-[#022c22]">Source Wallet *</label>
+            <select 
+              value={formData.wallet_id}
+              onChange={(e) => setFormData({ ...formData, wallet_id: e.target.value })}
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
+            >
+              <option value="">-- Select Source Wallet --</option>
+              {wallets.map(w => (
+                <option key={w.id} value={w.id}>{w.customer_reference} - {w.account_number}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-[#022c22]">Agent Name *</label>
             <input 
               type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
               placeholder="e.g. Sweep on Friday"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[#022c22]">Trigger Condition</label>
-            <select className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]">
-              <option>BALANCE_ABOVE</option>
-              <option>BALANCE_BELOW</option>
-              <option>ON_CREDIT</option>
+            <label className="text-sm font-medium text-[#022c22]">Trigger Condition *</label>
+            <select 
+              value={formData.trigger}
+              onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
+            >
+              <option value="BALANCE_ABOVE">BALANCE_ABOVE</option>
+              <option value="BALANCE_BELOW">BALANCE_BELOW</option>
+              <option value="ON_CREDIT">ON_CREDIT</option>
             </select>
           </div>
 
+          {(formData.trigger === 'BALANCE_ABOVE' || formData.trigger === 'BALANCE_BELOW') && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[#022c22]">Threshold Amount *</label>
+              <input 
+                type="number"
+                value={formData.threshold}
+                onChange={(e) => setFormData({ ...formData, threshold: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+                placeholder="e.g. 50000"
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[#022c22]">Action to Execute</label>
-            <select className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]">
-              <option>SWEEP_FULL</option>
-              <option>PARTIAL_SWEEP</option>
-              <option>LOCK_WALLET</option>
-              <option>WEBHOOK_NOTIFY</option>
+            <label className="text-sm font-medium text-[#022c22]">Action to Execute *</label>
+            <select 
+              value={formData.action}
+              onChange={(e) => setFormData({ ...formData, action: e.target.value })}
+              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
+            >
+              <option value="SWEEP_FULL">SWEEP_FULL</option>
+              <option value="PARTIAL_SWEEP">PARTIAL_SWEEP</option>
+              <option value="LOCK_WALLET">LOCK_WALLET</option>
+              <option value="WEBHOOK_NOTIFY">WEBHOOK_NOTIFY</option>
             </select>
           </div>
+
+          {(formData.action === 'SWEEP_FULL' || formData.action === 'PARTIAL_SWEEP') && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[#022c22]">Target Wallet *</label>
+              <select 
+                value={formData.destination_wallet_id}
+                onChange={(e) => setFormData({ ...formData, destination_wallet_id: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
+              >
+                <option value="">-- Select Destination Wallet --</option>
+                {wallets.filter(w => w.id !== formData.wallet_id).map(w => (
+                  <option key={w.id} value={w.id}>{w.customer_reference} - {w.account_number}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {formData.action === 'PARTIAL_SWEEP' && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[#022c22]">Sweep Amount *</label>
+              <input 
+                type="number"
+                value={formData.sweep_amount}
+                onChange={(e) => setFormData({ ...formData, sweep_amount: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
+                placeholder="e.g. 10000"
+              />
+            </div>
+          )}
           
           <Button 
             className="w-full justify-center bg-[#022c22] text-white hover:bg-[#064e3b] h-12 mt-2" 
-            onClick={() => setIsCreateModalOpen(false)}
+            onClick={handleCreate}
+            disabled={isCreating}
           >
-            Save Agent
+            {isCreating ? "Saving..." : "Save Agent"}
           </Button>
         </div>
       </Modal>

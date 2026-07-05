@@ -117,7 +117,7 @@ export default function SettingsPage() {
           <p className="text-[#6a6c6c] mt-1">Manage your API keys, Nomba integration, and profile.</p>
         </div>
         <a 
-          href="https://docs.avenue.dev" 
+          href="https://avenue-cloud.vercel.app" 
           target="_blank" 
           rel="noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 rounded-lg text-sm font-bold hover:bg-[#dcfce7] transition-colors"

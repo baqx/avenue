@@ -31,7 +31,8 @@ export default function WebhooksPage() {
 
   const logs = logsData?.items || [];
 
-  const inboundUrl = "https://api.avenue.so/v1/webhooks/inbound/dev_8f92j29x";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.avenue.so/v1";
+  const inboundUrl = `${baseUrl}/webhooks/inbound/dev_8f92j29x`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inboundUrl);

@@ -106,7 +106,7 @@
   },
   "api": {
     "mdx": {
-      "server": "https://api.avenue.so",
+      "server": "https://johnajayi-avenue.hf.space",
       "auth": {
         "method": "key",
         "name": "x-api-key"
@@ -123,13 +123,13 @@
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://dashboard.avenue.so"
+        "href": "https://avenue-cloud.vercel.app/dashboard"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Get started free",
-      "href": "https://avenue.so/signup"
+      "href": "https://avenue-cloud.vercel.app/signup"
     }
   },
   "footer": {

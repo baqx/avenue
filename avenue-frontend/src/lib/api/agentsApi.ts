@@ -23,6 +23,16 @@ export interface AgentListResponse {
   limit: number;
 }
 
+export interface CreateAgentRequest {
+  wallet_id: string;
+  name: string;
+  trigger: string;
+  threshold?: number;
+  action: string;
+  destination_wallet_id?: string;
+  sweep_amount?: number;
+}
+
 export const agentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAgents: builder.query<AgentListResponse, { page?: number; limit?: number }>({
@@ -32,15 +42,23 @@ export const agentsApi = baseApi.injectEndpoints({
       }),
       providesTags: ['Agent'],
     }),
-    toggleAgent: builder.mutation<{ status: string }, { id: string; is_active: boolean }>({
-      query: ({ id, is_active }) => ({
-        url: `/agents/${id}/toggle`,
-        method: 'POST',
+    toggleAgent: builder.mutation<{ status: string }, { walletId: string; id: string; is_active: boolean }>({
+      query: ({ walletId, id, is_active }) => ({
+        url: `/wallets/${walletId}/agents/${id}/toggle`,
+        method: 'PATCH',
         body: { is_active },
+      }),
+      invalidatesTags: ['Agent'],
+    }),
+    createAgent: builder.mutation<Agent, CreateAgentRequest>({
+      query: ({ wallet_id, ...body }) => ({
+        url: `/wallets/${wallet_id}/agents`,
+        method: 'POST',
+        body,
       }),
       invalidatesTags: ['Agent'],
     }),
   }),
 });
 
-export const { useGetAgentsQuery, useToggleAgentMutation } = agentsApi;
+export const { useGetAgentsQuery, useToggleAgentMutation, useCreateAgentMutation } = agentsApi;
