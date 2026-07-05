@@ -127,6 +127,7 @@ Developer registers their own app URL in Avenue (outbound)
 | `POST` | `/v1/wallets/:wallet_id/close` | Deactivate a wallet — sets status to `CLOSED`, future payments go to suspense |
 | `POST` | `/v1/wallets/:wallet_id/freeze` | Temporarily freeze a wallet — sets status to `FROZEN` |
 | `POST` | `/v1/wallets/:wallet_id/unfreeze` | Reactivate a frozen wallet back to `ACTIVE` |
+| `POST` | `/v1/wallets/:wallet_id/transfer` | **End-User Transfer API:** Transfer money out of this wallet to another Avenue wallet (internal) or a standard bank account (external). Fails if `allow_transfers_out` is false. |
 | `GET` | `/v1/wallets/:wallet_id/balance` | Get only the current balance (lightweight endpoint for polling) |
 | `GET` | `/v1/wallets/:wallet_id/account` | Get the virtual account details (account_number, bank_name, account_name) |
 
@@ -141,7 +142,8 @@ Developer registers their own app URL in Avenue (outbound)
   "email": "john.doe@example.com",
   "label": "John Doe — School Fees",
   "currency": "NGN",
-  "system_prompt": "This wallet collects school fees. Expected amount: 50,000 NGN per term. Flag anything under 50,000 as an underpayment."
+  "system_prompt": "This wallet collects school fees. Expected amount: 50,000 NGN per term. Flag anything under 50,000 as an underpayment.",
+  "allow_transfers_out": true
 }
 ```
 **Create Wallet Response:**
@@ -237,14 +239,16 @@ Developer registers their own app URL in Avenue (outbound)
 | `WEBHOOK_NOTIFY` | Fire a custom webhook notification to developer's URL |
 | `LOCK_WALLET` | Freeze the wallet from receiving further credits |
 
-**Create Agent Payload:**
+**Create Agent Payload (External Sweep):**
 ```json
 {
-  "name": "Auto-Sweep on Full Payment",
+  "name": "Auto-Sweep to Escrow Bank",
   "trigger": "BALANCE_ABOVE",
   "threshold": 50000,
   "action": "SWEEP",
-  "destination_wallet_id": "wal_master_escrow"
+  "destination_account_number": "0123456789",
+  "destination_bank_code": "058",
+  "destination_account_name": "PropTech Escrow"
 }
 ```
 
@@ -331,6 +335,8 @@ Developer registers their own app URL in Avenue (outbound)
 | `wallet.closed` | Wallet deactivated |
 | `wallet.frozen` | Wallet frozen |
 | `wallet.unfrozen` | Wallet unfrozen |
+| `transfer.success` | External transfer succeeded and funds arrived |
+| `transfer.failed` | External transfer failed and funds were refunded |
 | `agent.triggered` | An agent rule fired and executed an action |
 | `suspense.created` | A payment routed to suspense |
 | `suspense.resolved` | A suspense item resolved |

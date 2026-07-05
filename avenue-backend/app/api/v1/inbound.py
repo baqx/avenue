@@ -96,12 +96,14 @@ async def receive_nomba_webhook(
     sender_account = customer.get("accountNumber")
     raw_narration = transaction.get("narration", "")
 
-    if not nomba_reference or not account_number:
-        return {"status": "rejected", "reason": "Missing required fields"}
-
-    # Only process payment_success events for crediting
-    if event_type != "payment_success":
-        return {"status": "ok", "note": f"Event type '{event_type}' acknowledged but not processed for credit"}
+    if event_type == "payment_success":
+        if not nomba_reference or not account_number:
+            return {"status": "rejected", "reason": "Missing required fields"}
+    elif event_type in ("payout_success", "payout_failed", "payout_refund"):
+        # Allow transfer webhooks through. The background task will parse them.
+        pass
+    else:
+        return {"status": "ok", "note": f"Event type '{event_type}' acknowledged but not processed"}
 
     # ── Step 3: Enqueue background task ────────────────────────────────────
     await request.app.state.arq_pool.enqueue_job(

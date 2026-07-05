@@ -6,10 +6,11 @@ from app.core.config import settings
 from app.core.errors import BadRequestError
 from app.db.session import AsyncSessionLocal
 from app.db.models.wallet import Wallet
+from app.db.models.ledger import LedgerEntry
 from app.db.models.nomba_config import OutboundWebhook
 from sqlalchemy import select
 from app.services.ai_engine import reconcile_narration
-from app.services.ledger import record_credit
+from app.services.ledger import record_credit, get_wallet_balance
 from app.services.suspense import create_suspense_item
 from app.services.webhook_dispatcher import dispatch_event
 from app.services.agent_runner import evaluate_agents
@@ -37,6 +38,75 @@ async def process_inbound_webhook_task(
     sender_name = customer.get("senderName")
     sender_account = customer.get("accountNumber")
     raw_narration = transaction.get("narration", "")
+
+    if event_type in ("payout_success", "payout_failed", "payout_refund"):
+        merchant_tx_ref = data.get("merchantTxRef") or transaction.get("merchantTxRef")
+        if not merchant_tx_ref:
+            return "missing_merchant_tx_ref"
+        
+        async with AsyncSessionLocal() as db:
+            try:
+                result = await db.execute(
+                    select(LedgerEntry).where(LedgerEntry.nomba_reference == merchant_tx_ref)
+                )
+                entry = result.scalar_one_or_none()
+                if not entry:
+                    return "ledger_entry_not_found"
+                
+                if entry.status in ("SETTLED", "REVERSED"):
+                    return f"already_processed_{entry.status}"
+                
+                if event_type == "payout_success":
+                    entry.status = "SETTLED"
+                else:
+                    entry.status = "REVERSED"
+                    # Since we use lazy loading, we might need to fetch the wallet explicitly
+                    wallet_result = await db.execute(select(Wallet).where(Wallet.id == entry.wallet_id))
+                    wallet = wallet_result.scalar_one()
+                    # Compensatory credit
+                    await record_credit(
+                        wallet=wallet,
+                        amount_kobo=entry.amount,
+                        nomba_reference=f"REFUND-{entry.id}",
+                        developer_id=developer_id,
+                        sender_name="System",
+                        sender_account="System",
+                        raw_narration=f"Refund for failed transfer: {merchant_tx_ref}",
+                        ai_metadata=None,
+                        db=db,
+                    )
+                
+                await db.commit()
+
+                # Dispatch outbound webhook
+                outbound_result = await db.execute(
+                    select(OutboundWebhook).where(OutboundWebhook.developer_id == developer_id)
+                )
+                outbound_webhook = outbound_result.scalar_one_or_none()
+
+                if outbound_webhook and outbound_webhook.is_active:
+                    new_balance = await get_wallet_balance(entry.wallet_id, db)
+                    outbound_event_type = "transfer.success" if event_type == "payout_success" else "transfer.failed"
+                    await dispatch_event(
+                        developer_id=developer_id,
+                        event_type=outbound_event_type,
+                        data={
+                            "wallet_id": str(entry.wallet_id),
+                            "transaction_id": str(entry.id),
+                            "amount": entry.amount,
+                            "new_balance": new_balance,
+                            "currency": entry.currency,
+                        },
+                        webhook_url=outbound_webhook.url,
+                        signing_secret=outbound_webhook.signing_secret,
+                        db=db,
+                    )
+                    await db.commit()
+                return f"processed_{event_type}"
+            except Exception as e:
+                await db.rollback()
+                logger.error(f"Error processing transfer webhook task: {str(e)}")
+                raise e
 
     async with AsyncSessionLocal() as db:
         try:
@@ -135,7 +205,7 @@ async def process_inbound_webhook_task(
             outbound_webhook = outbound_result.scalar_one_or_none()
 
             if outbound_webhook and outbound_webhook.is_active:
-                new_balance = entry.balance_after
+                new_balance = await get_wallet_balance(wallet.id, db)
                 await dispatch_event(
                     developer_id=developer_id,
                     event_type="ledger.credit",
