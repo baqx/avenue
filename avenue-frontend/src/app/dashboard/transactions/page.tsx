@@ -6,54 +6,19 @@ import { PageReveal } from "@/components/ui/PageReveal";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-// Mock data
-const TRANSACTIONS = [
-  { 
-    id: "tx_10923", 
-    ref: "nomba_119920384", 
-    walletNuban: "0012345678",
-    type: "credit", 
-    amount: "₦45,000.00", 
-    desc: "School fees - SS2 term 2", 
-    rawNarration: "TRF/NOMBA/ADEBAYO/SCH_FEES/SS2_TERM2",
-    aiConfidence: 0.94,
-    status: "settled", 
-    time: "Oct 24, 10:45 AM" 
-  },
-  { 
-    id: "tx_10924", 
-    ref: "nomba_119920385", 
-    walletNuban: "0012345678",
-    type: "debit", 
-    amount: "₦12,000.00", 
-    desc: "Wallet sweep to main account", 
-    rawNarration: "SYSTEM/AUTO_SWEEP/MAIN_ACCT",
-    aiConfidence: null, // System generated, no AI needed
-    status: "settled", 
-    time: "Oct 24, 09:00 AM" 
-  },
-  { 
-    id: "tx_10925", 
-    ref: "nomba_119920386", 
-    walletNuban: "0012345679",
-    type: "credit", 
-    amount: "₦2,500.00", 
-    desc: "Unknown intent", 
-    rawNarration: "TRF/GTB/JOHN_DOE/1293810293",
-    aiConfidence: 0.31,
-    status: "suspense", 
-    time: "Oct 23, 04:12 PM" 
-  },
-];
+import { useGetGlobalTransactionsQuery } from "@/lib/api/ledgerApi";
 
 export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTx, setSelectedTx] = useState<typeof TRANSACTIONS[0] | null>(null);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  
+  const { data: txData } = useGetGlobalTransactionsQuery({ page: 1, limit: 100 });
+  const rawTxs = txData?.items || [];
 
-  const filteredTx = TRANSACTIONS.filter(t => 
-    t.ref.includes(searchQuery) || 
-    t.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.walletNuban.includes(searchQuery)
+  const filteredTx = rawTxs.filter(t => 
+    t.id.includes(searchQuery) || 
+    t.raw_narration.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.wallet_id.includes(searchQuery)
   );
 
   return (
@@ -97,7 +62,9 @@ export default function TransactionsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredTx.map((tx) => (
+              {filteredTx.map((tx) => {
+                const isSuspense = tx.ai_intelligence?.flags?.includes('suspense_queue');
+                return (
                 <tr 
                   key={tx.id} 
                   onClick={() => setSelectedTx(tx)}
@@ -105,38 +72,38 @@ export default function TransactionsPage() {
                 >
                   <td className="p-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'credit' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
-                        {tx.type === 'credit' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'CREDIT' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
+                        {tx.type === 'CREDIT' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
                       </div>
                       <div>
-                        <div className="font-medium text-[#022c22]">{tx.desc}</div>
-                        <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">{tx.ref}</div>
+                        <div className="font-medium text-[#022c22]">{tx.ai_intelligence?.suggested_label || "Unknown Intent"}</div>
+                        <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">{tx.id}</div>
                       </div>
                     </div>
                   </td>
                   <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">
-                    <span className={tx.type === "credit" ? "text-[#059669]" : "text-[#022c22]"}>
-                      {tx.type === "credit" ? "+" : "-"}{tx.amount}
+                    <span className={tx.type === "CREDIT" ? "text-[#059669]" : "text-[#022c22]"}>
+                      {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </td>
                   <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">
-                    {tx.walletNuban}
+                    {tx.wallet_id.substring(0, 8)}...
                   </td>
                   <td className="p-4 whitespace-nowrap">
-                    {tx.status === "settled" && (
+                    {!isSuspense && (
                       <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
                         SETTLED
                       </span>
                     )}
-                    {tx.status === "suspense" && (
+                    {isSuspense && (
                       <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
                         SUSPENSE
                       </span>
                     )}
                   </td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{tx.time}</td>
+                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
                 </tr>
-              ))}
+              )})}
               {filteredTx.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No transactions found.</td>
@@ -148,7 +115,9 @@ export default function TransactionsPage() {
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredTx.map((tx) => (
+          {filteredTx.map((tx) => {
+            const isSuspense = tx.ai_intelligence?.flags?.includes('suspense_queue');
+            return (
             <div 
               key={tx.id} 
               onClick={() => setSelectedTx(tx)}
@@ -156,25 +125,25 @@ export default function TransactionsPage() {
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'credit' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
-                    {tx.type === 'credit' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'CREDIT' ? 'bg-[#f0fdf4] text-[#059669]' : 'bg-red-50 text-red-600'}`}>
+                    {tx.type === 'CREDIT' ? <ArrowDownLeft weight="bold" /> : <ArrowUpRight weight="bold" />}
                   </div>
                   <div>
-                    <div className="font-medium text-[#022c22]">{tx.desc}</div>
-                    <div className="text-[10px] font-mono text-[#6a6c6c] mt-0.5">{tx.ref}</div>
+                    <div className="font-medium text-[#022c22]">{tx.ai_intelligence?.suggested_label || "Unknown Intent"}</div>
+                    <div className="text-[10px] font-mono text-[#6a6c6c] mt-0.5">{tx.id}</div>
                   </div>
                 </div>
               </div>
               <div className="flex justify-between items-end mt-4">
                 <div className="text-xs text-[#6a6c6c]">
-                  Wallet: <span className="font-mono text-[#022c22]">{tx.walletNuban}</span>
+                  Wallet: <span className="font-mono text-[#022c22]">{tx.wallet_id.substring(0, 8)}...</span>
                 </div>
-                <span className={`font-bold ${tx.type === "credit" ? "text-[#059669]" : "text-[#022c22]"}`}>
-                  {tx.type === "credit" ? "+" : "-"}{tx.amount}
+                <span className={`font-bold ${tx.type === "CREDIT" ? "text-[#059669]" : "text-[#022c22]"}`}>
+                  {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
-          ))}
+          )})}
           {filteredTx.length === 0 && (
             <div className="p-8 text-center text-[#6a6c6c]">No transactions found.</div>
           )}
@@ -191,13 +160,13 @@ export default function TransactionsPage() {
           <div className="space-y-6 pb-2">
             <div className="text-center pb-6 border-b border-[#e4e7e9]">
               <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider mb-2">
-                {selectedTx.type === 'credit' ? 'Received' : 'Sent'}
+                {selectedTx.type === 'CREDIT' ? 'Received' : 'Sent'}
               </div>
               <div className="text-4xl font-bold text-[#022c22] tracking-tighter">
-                {selectedTx.amount}
+                ₦{(selectedTx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </div>
               <div className="mt-3 inline-flex">
-                {selectedTx.status === "settled" ? (
+                {!selectedTx.ai_intelligence?.flags?.includes('suspense_queue') ? (
                   <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
                     SETTLED
                   </span>
@@ -216,19 +185,19 @@ export default function TransactionsPage() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
                 <span className="text-[#6a6c6c]">Nomba Ref</span>
-                <span className="font-mono font-medium text-[#022c22]">{selectedTx.ref}</span>
+                <span className="font-mono font-medium text-[#022c22]">{selectedTx.id}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
-                <span className="text-[#6a6c6c]">Wallet NUBAN</span>
-                <span className="font-mono font-medium text-[#022c22]">{selectedTx.walletNuban}</span>
+                <span className="text-[#6a6c6c]">Wallet ID</span>
+                <span className="font-mono font-medium text-[#022c22]">{selectedTx.wallet_id.substring(0, 8)}...</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#e4e7e9] border-dashed">
                 <span className="text-[#6a6c6c]">Date & Time</span>
-                <span className="font-medium text-[#022c22]">{selectedTx.time}</span>
+                <span className="font-medium text-[#022c22]">{new Date(selectedTx.created_at).toLocaleString()}</span>
               </div>
             </div>
 
-            {selectedTx.aiConfidence !== null && (
+            {selectedTx.ai_intelligence && (
               <div className="mt-6 bg-[#022c22] rounded-xl p-5 border border-[#10b981]">
                 <div className="flex items-center gap-2 mb-4 text-[#10b981]">
                   <Robot weight="fill" className="w-5 h-5" />
@@ -239,7 +208,7 @@ export default function TransactionsPage() {
                   <div>
                     <div className="text-xs text-[#6ee7b7] mb-1">Raw Bank Narration</div>
                     <div className="font-mono text-sm text-white bg-[#064e3b] p-2 rounded border border-[#10b981]/30 break-all">
-                      {selectedTx.rawNarration}
+                      {selectedTx.raw_narration}
                     </div>
                   </div>
                   
@@ -248,12 +217,12 @@ export default function TransactionsPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-2 bg-[#064e3b] rounded-full overflow-hidden">
                         <div 
-                          className={`h-full ${selectedTx.aiConfidence > 0.75 ? "bg-[#10b981]" : "bg-amber-400"}`} 
-                          style={{ width: `${selectedTx.aiConfidence * 100}%` }} 
+                          className={`h-full ${selectedTx.ai_intelligence.confidence_score > 0.75 ? "bg-[#10b981]" : "bg-amber-400"}`} 
+                          style={{ width: `${selectedTx.ai_intelligence.confidence_score * 100}%` }} 
                         />
                       </div>
                       <span className="font-mono text-sm text-white font-bold shrink-0">
-                        {(selectedTx.aiConfidence * 100).toFixed(0)}%
+                        {(selectedTx.ai_intelligence.confidence_score * 100).toFixed(0)}%
                       </span>
                     </div>
                   </div>
@@ -261,7 +230,7 @@ export default function TransactionsPage() {
               </div>
             )}
             
-            {selectedTx.status === "suspense" && (
+            {selectedTx.ai_intelligence?.flags?.includes('suspense_queue') && (
               <div className="bg-[#fffbeb] rounded-lg p-4 flex items-start gap-3 border border-[#fcd34d]">
                 <Info className="w-5 h-5 text-[#b45309] shrink-0 mt-0.5" />
                 <div>

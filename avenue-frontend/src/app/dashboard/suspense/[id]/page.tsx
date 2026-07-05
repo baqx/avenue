@@ -44,7 +44,7 @@ export default function SuspenseResolutionPage({ params }: { params: Promise<{ i
       toast.success('Resolved successfully', `The suspense item was ${action === 'CREDIT_WALLET' ? 'credited' : 'dismissed'}.`);
       router.push('/dashboard/suspense');
     } catch (err: any) {
-      toast.error('Resolution failed', err?.data?.detail || 'Could not resolve the item.');
+      toast.error('Resolution failed', err?.data?.error?.message || err?.data?.detail || 'Could not resolve the item.');
     }
   };
 

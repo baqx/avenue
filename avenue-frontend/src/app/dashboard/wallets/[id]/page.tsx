@@ -45,7 +45,7 @@ export default function WalletDetailsPage({ params }: { params: Promise<{ id: st
       }
       refetch();
     } catch (err: any) {
-      toast.error('Action failed', err?.data?.detail || 'Could not update wallet status.');
+      toast.error('Action failed', err?.data?.error?.message || err?.data?.detail || 'Could not update wallet status.');
     }
   };
 
@@ -57,7 +57,7 @@ export default function WalletDetailsPage({ params }: { params: Promise<{ id: st
         toast.success('Wallet Closed', 'The wallet has been permanently closed.');
         refetch();
       } catch (err: any) {
-        toast.error('Action failed', err?.data?.detail || 'Could not close wallet.');
+        toast.error('Action failed', err?.data?.error?.message || err?.data?.detail || 'Could not close wallet.');
       }
     }
   };

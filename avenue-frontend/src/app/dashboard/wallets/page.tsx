@@ -6,21 +6,34 @@ import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
-// Mock data
-const WALLETS = [
-  { id: "wal_1", nuban: "0012345678", label: "Apt 4B Rent", status: "ACTIVE", balance: "₦450,000.00", created: "2024-01-12" },
-  { id: "wal_2", nuban: "0012345679", label: "John Doe Subs", status: "ACTIVE", balance: "₦12,500.00", created: "2024-01-15" },
-  { id: "wal_3", nuban: "0012345680", label: "Escrow - TX_09", status: "FROZEN", balance: "₦1,200,000.00", created: "2024-02-01" },
-  { id: "wal_4", nuban: "0012345681", label: "Marketing Fund", status: "CLOSED", balance: "₦0.00", created: "2023-11-20" },
-];
+import { useGetWalletsQuery, useCreateWalletMutation } from "@/lib/api/walletsApi";
+import { useToast } from "@/components/ui/toast/ToastProvider";
+import { useRouter } from "next/navigation";
 
 export default function WalletsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: walletsData } = useGetWalletsQuery({ page: 1, limit: 100 });
+  const [createWallet, { isLoading: isCreating }] = useCreateWalletMutation();
+  const [formData, setFormData] = useState({ customer_reference: '', first_name: '', last_name: '', email: '', label: '', system_prompt: '' });
+  const toast = useToast();
+  const router = useRouter();
 
-  const filteredWallets = WALLETS.filter(w => 
-    w.nuban.includes(searchQuery) || w.label.toLowerCase().includes(searchQuery.toLowerCase())
+  const rawWallets = walletsData?.items || [];
+  const filteredWallets = rawWallets.filter(w => 
+    w.account_number.includes(searchQuery) || w.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleProvision = async () => {
+    try {
+      await createWallet(formData).unwrap();
+      toast.success('Wallet created', 'NUBAN provisioned successfully.');
+      setIsModalOpen(false);
+      setFormData({ customer_reference: '', first_name: '', last_name: '', email: '', label: '', system_prompt: '' });
+    } catch (err: any) {
+      toast.error('Failed', err?.data?.error?.message || err?.data?.detail || 'Could not provision wallet.');
+    }
+  };
 
   return (
     <PageReveal>
@@ -65,8 +78,8 @@ export default function WalletsPage() {
             </thead>
             <tbody>
               {filteredWallets.map((wallet) => (
-                <tr key={wallet.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
-                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.nuban}</td>
+                <tr key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
+                  <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.account_number}</td>
                   <td className="p-4 text-[#022c22] whitespace-nowrap font-medium">{wallet.label}</td>
                   <td className="p-4 whitespace-nowrap">
                     {wallet.status === "ACTIVE" && (
@@ -85,8 +98,8 @@ export default function WalletsPage() {
                       </span>
                     )}
                   </td>
-                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">{wallet.balance}</td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{wallet.created}</td>
+                  <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(wallet.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
               {filteredWallets.length === 0 && (
@@ -101,17 +114,17 @@ export default function WalletsPage() {
         {/* Mobile Cards (Instead of overflowing table) */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">
           {filteredWallets.map((wallet) => (
-            <div key={wallet.id} className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4]">
+            <div key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4] cursor-pointer">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-mono font-medium text-[#022c22]">{wallet.nuban}</span>
+                <span className="font-mono font-medium text-[#022c22]">{wallet.account_number}</span>
                 {wallet.status === "ACTIVE" && <span className="text-[10px] uppercase font-bold text-[#059669]">ACTIVE</span>}
                 {wallet.status === "FROZEN" && <span className="text-[10px] uppercase font-bold text-blue-600">FROZEN</span>}
                 {wallet.status === "CLOSED" && <span className="text-[10px] uppercase font-bold text-red-600">CLOSED</span>}
               </div>
               <div className="font-medium text-[#022c22] mb-1">{wallet.label}</div>
               <div className="flex justify-between items-end mt-4">
-                <span className="text-[#6a6c6c] text-xs">{wallet.created}</span>
-                <span className="font-semibold text-[#022c22]">{wallet.balance}</span>
+                <span className="text-[#6a6c6c] text-xs">{new Date(wallet.created_at).toLocaleDateString()}</span>
+                <span className="font-semibold text-[#022c22]">₦{(wallet.balance / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           ))}
@@ -135,6 +148,8 @@ export default function WalletsPage() {
             <label className="text-sm font-medium text-[#022c22]">Customer Reference</label>
             <input 
               type="text"
+              value={formData.customer_reference}
+              onChange={(e) => setFormData({ ...formData, customer_reference: e.target.value })}
               className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
               placeholder="e.g. user_987"
             />
@@ -145,6 +160,8 @@ export default function WalletsPage() {
               <label className="text-sm font-medium text-[#022c22]">First Name</label>
               <input 
                 type="text"
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                 className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
                 placeholder="e.g. John"
               />
@@ -153,6 +170,8 @@ export default function WalletsPage() {
               <label className="text-sm font-medium text-[#022c22]">Last Name</label>
               <input 
                 type="text"
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                 className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
                 placeholder="e.g. Doe"
               />
@@ -163,6 +182,8 @@ export default function WalletsPage() {
             <label className="text-sm font-medium text-[#022c22]">Email Address</label>
             <input 
               type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
               placeholder="e.g. john@example.com"
             />
@@ -172,6 +193,8 @@ export default function WalletsPage() {
             <label className="text-sm font-medium text-[#022c22]">Label</label>
             <input 
               type="text"
+              value={formData.label}
+              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
               className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
               placeholder="e.g. User #981 Wallet"
             />
@@ -180,6 +203,8 @@ export default function WalletsPage() {
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-[#022c22]">AI System Prompt (Optional)</label>
             <textarea 
+              value={formData.system_prompt}
+              onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
               className="w-full h-24 p-3.5 rounded-lg border border-[#e4e7e9] text-sm resize-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
               placeholder="Context for the AI reconciliation engine..."
             />
@@ -187,9 +212,10 @@ export default function WalletsPage() {
           
           <Button 
             className="w-full justify-center bg-[#022c22] text-white hover:bg-[#064e3b] h-12 mt-2" 
-            onClick={() => setIsModalOpen(false)}
+            onClick={handleProvision}
+            disabled={isCreating}
           >
-            Provision NUBAN
+            {isCreating ? "Provisioning..." : "Provision NUBAN"}
           </Button>
         </div>
       </Modal>

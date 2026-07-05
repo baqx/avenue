@@ -31,7 +31,7 @@ export default function NewWalletPage() {
       toast.success('Wallet provisioned', 'A new virtual account has been successfully created via Nomba.');
       router.push('/dashboard/wallets');
     } catch (err: any) {
-      toast.error('Provisioning failed', err?.data?.detail || 'Could not provision the wallet. Please try again.');
+      toast.error('Provisioning failed', err?.data?.error?.message || err?.data?.detail || 'Could not provision the wallet. Please try again.');
     }
   };
 

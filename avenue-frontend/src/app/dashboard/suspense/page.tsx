@@ -6,38 +6,34 @@ import { PageReveal } from "@/components/ui/PageReveal";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-// Mock data
-const SUSPENSE_ITEMS = [
-  { 
-    id: "tx_10925", 
-    ref: "nomba_119920386", 
-    walletNuban: "0012345679",
-    amount: "₦2,500.00", 
-    rawNarration: "TRF/GTB/JOHN_DOE/1293810293",
-    aiConfidence: 0.31,
-    time: "Oct 23, 04:12 PM",
-    reason: "Low Confidence: Unrecognized sender name format."
-  },
-  { 
-    id: "tx_10940", 
-    ref: "nomba_119920555", 
-    walletNuban: "0012345681",
-    amount: "₦400,000.00", 
-    rawNarration: "TRF/WEMA/XYZ_CORP/PAYMENT_01",
-    aiConfidence: 0.55,
-    time: "Oct 24, 08:30 AM",
-    reason: "Low Confidence: Overlapping intent signatures."
-  },
-];
+import { useGetSuspenseItemsQuery, useResolveSuspenseMutation } from "@/lib/api/suspenseApi";
+import { useToast } from "@/components/ui/toast/ToastProvider";
 
 export default function SuspensePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<typeof SUSPENSE_ITEMS[0] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  
+  const { data: suspenseData } = useGetSuspenseItemsQuery({ page: 1, limit: 100, status: 'PENDING' });
+  const [resolveSuspense] = useResolveSuspenseMutation();
+  const toast = useToast();
 
-  const filteredItems = SUSPENSE_ITEMS.filter(i => 
-    i.ref.includes(searchQuery) || 
-    i.rawNarration.toLowerCase().includes(searchQuery.toLowerCase())
+  const rawItems = suspenseData?.items || [];
+  const filteredItems = rawItems.filter(i => 
+    i.id.includes(searchQuery) || 
+    (i.raw_narration && i.raw_narration.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    i.account_number.includes(searchQuery)
   );
+
+  const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS') => {
+    if (!selectedItem) return;
+    try {
+      await resolveSuspense({ id: selectedItem.id, body: { action } }).unwrap();
+      toast.success('Resolved', `Transaction successfully ${action === 'CREDIT_WALLET' ? 'credited' : 'dismissed'}.`);
+      setSelectedItem(null);
+    } catch (err: any) {
+      toast.error('Failed', err?.data?.error?.message || err?.data?.detail || 'Could not resolve transaction.');
+    }
+  };
 
   return (
     <PageReveal>
@@ -47,7 +43,7 @@ export default function SuspensePage() {
             Suspense Queue 
             <span className="bg-[#fffbeb] text-[#b45309] border border-[#fcd34d] px-2.5 py-0.5 rounded text-sm font-bold flex items-center gap-1.5">
               <ShieldWarning weight="fill" />
-              {SUSPENSE_ITEMS.length} Action Needed
+              {rawItems.length} Action Needed
             </span>
           </h1>
           <p className="text-[#6a6c6c] mt-1">Resolve transactions that did not meet the AI auto-reconciliation threshold.</p>
@@ -82,17 +78,19 @@ export default function SuspensePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((item) => (
+              {filteredItems.map((item) => {
+                const confScore = item.raw_payload?.ai_intelligence?.confidence_score || 0;
+                return (
                 <tr 
                   key={item.id} 
                   className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#fffbeb]/50 transition-colors group"
                 >
                   <td className="p-4 whitespace-nowrap">
-                    <div className="font-mono text-sm text-[#022c22] font-semibold">{item.ref}</div>
-                    <div className="text-xs text-[#6a6c6c] mt-1">{item.time}</div>
+                    <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
+                    <div className="text-xs text-[#6a6c6c] mt-1">{new Date(item.created_at).toLocaleDateString()}</div>
                   </td>
                   <td className="p-4 font-bold text-[#b45309] whitespace-nowrap">
-                    {item.amount}
+                    ₦{(item.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                   <td className="p-4 text-sm text-[#022c22]">
                     <div className="flex items-start gap-2">
@@ -102,9 +100,9 @@ export default function SuspensePage() {
                   </td>
                   <td className="p-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <Robot weight="fill" className={item.aiConfidence > 0.5 ? "text-amber-500" : "text-red-500"} />
+                      <Robot weight="fill" className={confScore > 0.5 ? "text-amber-500" : "text-red-500"} />
                       <span className="font-mono text-xs font-bold text-[#022c22]">
-                        {(item.aiConfidence * 100).toFixed(0)}%
+                        {(confScore * 100).toFixed(0)}%
                       </span>
                     </div>
                   </td>
@@ -117,7 +115,7 @@ export default function SuspensePage() {
                     </Button>
                   </td>
                 </tr>
-              ))}
+              )})}
               {filteredItems.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-12 text-center text-[#6a6c6c]">
@@ -133,19 +131,21 @@ export default function SuspensePage() {
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredItems.map((item) => (
+          {filteredItems.map((item) => {
+            const confScore = item.raw_payload?.ai_intelligence?.confidence_score || 0;
+            return (
             <div key={item.id} className="p-4 bg-[#fffbeb]/30">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="font-mono text-sm text-[#022c22] font-semibold">{item.ref}</div>
-                  <div className="text-xs text-[#6a6c6c] mt-0.5">{item.time}</div>
+                  <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
+                  <div className="text-xs text-[#6a6c6c] mt-0.5">{new Date(item.created_at).toLocaleDateString()}</div>
                 </div>
-                <div className="font-bold text-[#b45309]">{item.amount}</div>
+                <div className="font-bold text-[#b45309]">₦{(item.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
               <div className="bg-white border border-[#fcd34d] p-3 rounded-lg text-sm text-[#92400e] mb-4">
                 <div className="flex items-center gap-2 font-bold mb-1">
                   <Robot weight="fill" />
-                  AI Confidence: {(item.aiConfidence * 100).toFixed(0)}%
+                  AI Confidence: {(confScore * 100).toFixed(0)}%
                 </div>
                 {item.reason}
               </div>
@@ -156,7 +156,7 @@ export default function SuspensePage() {
                 Resolve Issue
               </Button>
             </div>
-          ))}
+          )})}
           {filteredItems.length === 0 && (
             <div className="p-12 text-center text-[#6a6c6c]">
               <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
@@ -179,29 +179,29 @@ export default function SuspensePage() {
             <div className="bg-[#f7f9fb] p-4 rounded-lg border border-[#e4e7e9]">
               <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider mb-2">Raw Bank Narration</div>
               <div className="font-mono text-sm text-[#022c22] font-semibold break-all bg-white p-2 border border-[#e4e7e9] rounded">
-                {selectedItem.rawNarration}
+                {selectedItem.raw_narration}
               </div>
               <div className="flex justify-between items-end mt-3">
-                <div className="text-xs text-[#6a6c6c]">Intended Wallet: <span className="font-mono text-[#022c22]">{selectedItem.walletNuban}</span></div>
-                <div className="font-bold text-lg text-[#022c22]">{selectedItem.amount}</div>
+                <div className="text-xs text-[#6a6c6c]">Intended Wallet: <span className="font-mono text-[#022c22]">{selectedItem.account_number}</span></div>
+                <div className="font-bold text-lg text-[#022c22]">₦{(selectedItem.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="text-sm font-semibold text-[#022c22]">Select Resolution Action:</div>
               
-              <button className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-[#10b981] hover:bg-[#f0fdf4] transition-all group flex items-center justify-between">
+              <button onClick={() => handleResolve('CREDIT_WALLET')} className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-[#10b981] hover:bg-[#f0fdf4] transition-all group flex items-center justify-between">
                 <div>
                   <div className="font-bold text-[#022c22] flex items-center gap-2">
                     <CheckCircle weight="fill" className="text-[#10b981] group-hover:scale-110 transition-transform" />
                     Force Accept to Wallet
                   </div>
-                  <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Credit the funds to NUBAN {selectedItem.walletNuban}.</div>
+                  <div className="text-sm text-[#6a6c6c] mt-1 ml-6">Credit the funds to NUBAN {selectedItem.account_number}.</div>
                 </div>
                 <CaretRight className="text-[#bbbdbd] group-hover:text-[#10b981]" />
               </button>
 
-              <button className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-red-400 hover:bg-red-50 transition-all group flex items-center justify-between">
+              <button onClick={() => handleResolve('DISMISS')} className="w-full text-left p-4 rounded-xl border border-[#e4e7e9] hover:border-red-400 hover:bg-red-50 transition-all group flex items-center justify-between">
                 <div>
                   <div className="font-bold text-[#022c22] flex items-center gap-2">
                     <ArrowUUpLeft weight="bold" className="text-red-500 group-hover:scale-110 transition-transform" />

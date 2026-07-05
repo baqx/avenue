@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAppSelector, useAppDispatch } from "@/lib/hooks/redux";
+import { logout } from "@/lib/features/authSlice";
 import {
   House,
   Wallet,
@@ -33,6 +35,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.push("/login");
+  };
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] overflow-hidden">
@@ -101,17 +119,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-3 border-t border-[#e4e7e9]">
-          <Link
-            href="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-3 h-10 rounded-lg text-[#6a6c6c] hover:bg-red-50 hover:text-red-600 transition-colors relative"
+          <button
+            onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+            className="flex w-full items-center gap-3 px-3 h-10 rounded-lg text-[#6a6c6c] hover:bg-red-50 hover:text-red-600 transition-colors relative"
             title={collapsed ? "Log out" : undefined}
           >
             <SignOut className="w-5 h-5 shrink-0" />
             <span className={cn("font-bold text-sm whitespace-nowrap transition-all duration-300 absolute left-11", collapsed ? "md:opacity-0 md:invisible" : "opacity-100 visible")}>
               Log out
             </span>
-          </Link>
+          </button>
         </div>
       </aside>
 

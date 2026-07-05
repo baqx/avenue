@@ -7,16 +7,16 @@ import { SnapScroll } from "@/components/ui/SnapScroll";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-// Mock data
-const RECENT_ACTIVITY = [
-  { id: "tx_1", type: "credit", amount: "₦45,000.00", desc: "Wallet Funding", status: "success", time: "2 mins ago" },
-  { id: "tx_2", type: "debit", amount: "₦12,500.00", desc: "Vendor Payment", status: "success", time: "1 hr ago" },
-  { id: "tx_3", type: "credit", amount: "₦1,000,000.00", desc: "Settlement", status: "success", time: "3 hrs ago" },
-  { id: "tx_4", type: "credit", amount: "₦14,000.00", desc: "Unknown Intent", status: "suspense", time: "5 hrs ago" },
-];
+
+
+import { useGetOverviewStatsQuery } from "@/lib/api/analyticsApi";
+import { useGetGlobalTransactionsQuery } from "@/lib/api/ledgerApi";
 
 export default function DashboardOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: stats } = useGetOverviewStatsQuery();
+  const { data: txData } = useGetGlobalTransactionsQuery({ page: 1, limit: 5 });
+  const recentTxs = txData?.items || [];
 
   return (
     <PageReveal>
@@ -40,7 +40,9 @@ export default function DashboardOverview() {
             <Wallet className="w-5 h-5" />
             <span className="font-semibold text-sm">Total Ledger Balance</span>
           </div>
-          <div className="text-3xl font-bold text-[#022c22] mt-4">₦14,205,000.00</div>
+          <div className="text-3xl font-bold text-[#022c22] mt-4">
+            ₦{((stats?.total_volume_kobo || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
         </div>
 
         {/* Card 2: Wallets */}
@@ -49,7 +51,7 @@ export default function DashboardOverview() {
             <ArrowsLeftRight className="w-5 h-5" />
             <span className="font-semibold text-sm">Active Wallets</span>
           </div>
-          <div className="text-3xl font-bold text-[#022c22] mt-4">1,402</div>
+          <div className="text-3xl font-bold text-[#022c22] mt-4">{stats?.active_wallets || 0}</div>
         </div>
 
         {/* Card 3: Suspense */}
@@ -58,7 +60,7 @@ export default function DashboardOverview() {
             <ShieldWarning className="w-5 h-5" />
             <span className="font-semibold text-sm">Action Required (Suspense)</span>
           </div>
-          <div className="text-3xl font-bold text-[#b45309] mt-4">3 items</div>
+          <div className="text-3xl font-bold text-[#b45309] mt-4">{stats?.pending_suspense_count || 0} items</div>
         </div>
       </SnapScroll>
 
@@ -78,28 +80,33 @@ export default function DashboardOverview() {
               </tr>
             </thead>
             <tbody>
-              {RECENT_ACTIVITY.map((tx) => (
-                <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
-                  <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.desc}</td>
-                  <td className="p-4 whitespace-nowrap">
-                    <span className={tx.type === "credit" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
-                      {tx.type === "credit" ? "+" : "-"}{tx.amount}
-                    </span>
-                  </td>
-                  <td className="p-4 whitespace-nowrap">
-                    {tx.status === "suspense" ? (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                        SUSPENSE
+              {recentTxs.length === 0 ? (
+                <tr><td colSpan={4} className="p-4 text-center text-[#6a6c6c]">No recent activity</td></tr>
+              ) : recentTxs.map((tx) => {
+                const isSuspense = tx.ai_intelligence?.flags?.includes('suspense_queue');
+                return (
+                  <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
+                    <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.ai_intelligence?.suggested_label || "Unknown Intent"}</td>
+                    <td className="p-4 whitespace-nowrap">
+                      <span className={tx.type === "CREDIT" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
+                        {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                        SUCCESS
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{tx.time}</td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="p-4 whitespace-nowrap">
+                      {isSuspense ? (
+                        <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
+                          SUSPENSE
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                          SUCCESS
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString()}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

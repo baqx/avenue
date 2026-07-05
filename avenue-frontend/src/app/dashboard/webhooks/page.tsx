@@ -6,16 +6,23 @@ import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
-const WEBHOOK_LOGS = [
-  { id: "log_001", event: "ledger.credit", status: "DELIVERED", url: "https://api.zenithpay.co/webhooks/avenue", time: "2 mins ago", retries: 0 },
-  { id: "log_002", event: "wallet.created", status: "DELIVERED", url: "https://api.zenithpay.co/webhooks/avenue", time: "1 hr ago", retries: 0 },
-  { id: "log_003", event: "ledger.credit", status: "FAILED", url: "https://api.zenithpay.co/webhooks/avenue", time: "3 hrs ago", retries: 2 },
-];
+import { useGetWebhookLogsQuery } from "@/lib/api/webhooksApi";
+import { useGetWebhookConfigQuery, useConfigureWebhookMutation } from "@/lib/api/developerApi";
+import { useToast } from "@/components/ui/toast/ToastProvider";
 
 export default function WebhooksPage() {
   const [activeTab, setActiveTab] = useState<"config" | "logs">("config");
   const [copied, setCopied] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<typeof WEBHOOK_LOGS[0] | null>(null);
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+
+  const { data: logsData } = useGetWebhookLogsQuery({ page: 1, limit: 100 });
+  const { data: configData } = useGetWebhookConfigQuery();
+  const [configureWebhook, { isLoading: isSaving }] = useConfigureWebhookMutation();
+  const toast = useToast();
+
+  const [webhookUrl, setWebhookUrl] = useState(configData?.url || "");
+
+  const logs = logsData?.items || [];
 
   const inboundUrl = "https://api.avenue.so/v1/webhooks/inbound/dev_8f92j29x";
 
@@ -23,6 +30,15 @@ export default function WebhooksPage() {
     navigator.clipboard.writeText(inboundUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      await configureWebhook({ url: webhookUrl }).unwrap();
+      toast.success('Saved', 'Webhook configuration updated.');
+    } catch (err: any) {
+      toast.error('Failed', err?.data?.error?.message || err?.data?.detail || 'Could not save webhook configuration.');
+    }
   };
 
   return (
@@ -88,7 +104,9 @@ export default function WebhooksPage() {
                     <label className="text-sm font-medium text-[#022c22]">Endpoint URL</label>
                     <input 
                       type="url"
-                      defaultValue="https://api.zenithpay.co/webhooks/avenue"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      placeholder={configData?.url || "https://your-api.com/webhooks"}
                       className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all"
                     />
                   </div>
@@ -107,7 +125,13 @@ export default function WebhooksPage() {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <Button className="bg-[#022c22] text-white hover:bg-[#064e3b]">Save Changes</Button>
+                    <Button 
+                      className="bg-[#022c22] text-white hover:bg-[#064e3b]"
+                      onClick={handleSaveConfig}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </Button>
                     <Button variant="outline" className="gap-2 border-[#e4e7e9] text-[#022c22]">
                       <PaperPlaneRight weight="fill" />
                       Send Test Event
@@ -132,14 +156,14 @@ export default function WebhooksPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {WEBHOOK_LOGS.map((log) => (
+                    {logs.map((log) => (
                       <tr 
                         key={log.id} 
                         onClick={() => setSelectedLog(log)}
                         className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f7f9fb] transition-colors cursor-pointer"
                       >
                         <td className="p-4 font-mono text-sm text-[#022c22] font-semibold whitespace-nowrap">
-                          {log.event}
+                          {log.event_type}
                         </td>
                         <td className="p-4 whitespace-nowrap">
                           {log.status === "DELIVERED" ? (
@@ -153,11 +177,16 @@ export default function WebhooksPage() {
                           )}
                         </td>
                         <td className="p-4 text-sm text-[#6a6c6c] whitespace-nowrap">
-                          {log.retries > 0 ? log.retries : "-"}
+                          {log.attempt_count > 0 ? log.attempt_count : "-"}
                         </td>
-                        <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{log.time}</td>
+                        <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
                       </tr>
                     ))}
+                    {logs.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-[#6a6c6c]">No logs found.</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -176,8 +205,8 @@ export default function WebhooksPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="font-mono font-bold text-[#022c22]">{selectedLog.event}</h4>
-                <p className="text-sm text-[#6a6c6c] mt-1">{selectedLog.id} • {selectedLog.time}</p>
+                <h4 className="font-mono font-bold text-[#022c22]">{selectedLog.event_type}</h4>
+                <p className="text-sm text-[#6a6c6c] mt-1">{selectedLog.id} • {new Date(selectedLog.created_at).toLocaleString()}</p>
               </div>
               {selectedLog.status === "DELIVERED" ? (
                 <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
@@ -185,7 +214,7 @@ export default function WebhooksPage() {
                 </span>
               ) : (
                 <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
-                  FAILED (500)
+                  FAILED ({selectedLog.http_status_code || 500})
                 </span>
               )}
             </div>
@@ -193,19 +222,14 @@ export default function WebhooksPage() {
             <div className="space-y-2">
               <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider">Target URL</div>
               <div className="bg-[#f7f9fb] border border-[#e4e7e9] rounded-lg p-3 font-mono text-sm text-[#022c22] break-all">
-                {selectedLog.url}
+                {configData?.url || "No target URL"}
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider">Payload Snippet</div>
               <div className="bg-[#022c22] rounded-lg p-4 font-mono text-xs text-[#10b981] overflow-x-auto">
-                <pre>{`{
-  "event_id": "${selectedLog.id}",
-  "event_type": "${selectedLog.event}",
-  "api_version": "2026-07-01",
-  "data": { ... }
-}`}</pre>
+                <pre>{JSON.stringify(selectedLog.payload, null, 2)}</pre>
               </div>
             </div>
 

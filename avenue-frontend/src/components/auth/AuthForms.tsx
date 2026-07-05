@@ -51,14 +51,38 @@ function InputField({ label, error, className, type, ...props }: InputFieldProps
   );
 }
 
+import { useLoginMutation } from "@/lib/api/authApi";
+import { useSignupMutation } from "@/lib/api/authApi";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks/redux";
+import { setCredentials } from "@/lib/features/authSlice";
+import { useToast } from "@/components/ui/toast/ToastProvider";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 // ── Login Form ─────────────────────────────────────────────────────────────
 export function LoginForm() {
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [login, { isLoading: loading }] = useLoginMutation();
+  const dispatch = useAppDispatch();
+  const toast = useToast();
+  const router = useRouter();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) router.push('/dashboard');
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      const result = await login({ email, password }).unwrap();
+      dispatch(setCredentials(result));
+      toast.success('Welcome back', 'You have successfully logged in.');
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error('Login failed', err?.data?.error?.message || err?.data?.detail || 'Please check your credentials.');
+    }
   };
 
   return (
@@ -87,8 +111,8 @@ export function LoginForm() {
         <p className="text-sm text-[#6a6c6c] mb-8">Log in to your Avenue account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <InputField label="Email" type="email" placeholder="dev@yourapp.io" required />
-          <InputField label="Password" type="password" placeholder="Your password" required />
+          <InputField label="Email" type="email" placeholder="dev@yourapp.io" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <InputField label="Password" type="password" placeholder="Your password" required value={password} onChange={(e) => setPassword(e.target.value)} />
 
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm text-[#6a6c6c] cursor-pointer">
@@ -165,14 +189,28 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export function SignupForm() {
+  const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [signup, { isLoading: loading }] = useSignupMutation();
+  const toast = useToast();
+  const router = useRouter();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) router.push('/dashboard');
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      await signup({ email, password, company_name: companyName }).unwrap();
+      toast.success('Account created', 'Proceed to login.');
+      router.push('/login');
+    } catch (err: any) {
+      toast.error('Signup failed', err?.data?.error?.message || err?.data?.detail || 'An error occurred.');
+    }
   };
 
   return (
@@ -201,8 +239,8 @@ export function SignupForm() {
         <p className="text-sm text-[#6a6c6c] mb-8">API keys are generated automatically.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <InputField label="Company / App name" type="text" placeholder="PropTech Inc." required />
-          <InputField label="Work email" type="email" placeholder="dev@yourapp.io" required />
+          <InputField label="Company / App name" type="text" placeholder="PropTech Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+          <InputField label="Work email" type="email" placeholder="dev@yourapp.io" required value={email} onChange={(e) => setEmail(e.target.value)} />
           <div>
             <InputField
               label="Password"
