@@ -146,9 +146,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <List className="w-6 h-6" />
             </button>
-            <span className="font-mono text-xs font-semibold text-[#059669] uppercase tracking-widest bg-[#f0fdf4] px-2.5 py-1 rounded border border-[#10b981]/30">
-              Live Mode
-            </span>
+            <div className="md:hidden pt-2 pl-2">
+              <Logo size="sm" />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
