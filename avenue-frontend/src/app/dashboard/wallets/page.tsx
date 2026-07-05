@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useGetWalletsQuery } from '@/lib/api/walletsApi';
 import { TableShimmer } from '@/components/ui/Shimmer';
-import { Plus, CaretRight, MagnifyingGlass } from '@phosphor-icons/react';
+import { Plus, CaretRight, MagnifyingGlass, Wallet } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 export default function WalletsPage() {
