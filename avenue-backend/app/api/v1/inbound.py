@@ -34,19 +34,15 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request, status
+from typing import Dict, Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.errors import BadRequestError
 from app.core.security import verify_nomba_signature
-from app.db.models.nomba_config import NombaConfig, OutboundWebhook
-from app.db.models.wallet import Wallet
+from app.db.models.nomba_config import NombaConfig
 from app.db.session import get_db
-from app.services.ai_engine import reconcile_narration
-from app.services.ledger import record_credit
-from app.services.suspense import create_suspense_item
-from app.services.webhook_dispatcher import dispatch_event
 
 router = APIRouter()
 
@@ -55,6 +51,7 @@ router = APIRouter()
 async def receive_nomba_webhook(
     developer_id: uuid.UUID,
     request: Request,
+    payload: Dict[str, Any],
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -70,7 +67,6 @@ async def receive_nomba_webhook(
     8. Evaluate agents
     9. Dispatch enriched webhook to developer
     """
-    payload = await request.json()
 
     # ── Step 1: Validate HMAC signature ────────────────────────────────────
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer_id))
@@ -107,122 +103,12 @@ async def receive_nomba_webhook(
     if event_type != "payment_success":
         return {"status": "ok", "note": f"Event type '{event_type}' acknowledged but not processed for credit"}
 
-    # ── Step 3: Find wallet ────────────────────────────────────────────────
-    result = await db.execute(
-        select(Wallet).where(
-            Wallet.account_number == account_number,
-            Wallet.developer_id == developer_id,
-        )
-    )
-    wallet = result.scalar_one_or_none()
-
-    if not wallet:
-        await create_suspense_item(
-            developer_id=developer_id,
-            account_number=account_number,
-            amount_kobo=amount_kobo,
-            sender_name=sender_name,
-            raw_narration=raw_narration,
-            nomba_reference=nomba_reference,
-            reason="NO_WALLET_FOUND",
-            raw_payload=payload,
-            db=db,
-        )
-        await db.commit()
-        return {"status": "ok", "routed_to": "suspense", "reason": "NO_WALLET_FOUND"}
-
-    # ── Step 4: Check wallet status ────────────────────────────────────────
-    if wallet.status in ("CLOSED", "FROZEN"):
-        reason = "WALLET_CLOSED" if wallet.status == "CLOSED" else "WALLET_FROZEN"
-        await create_suspense_item(
-            developer_id=developer_id,
-            account_number=account_number,
-            amount_kobo=amount_kobo,
-            sender_name=sender_name,
-            raw_narration=raw_narration,
-            nomba_reference=nomba_reference,
-            reason=reason,
-            raw_payload=payload,
-            db=db,
-        )
-        await db.commit()
-        return {"status": "ok", "routed_to": "suspense", "reason": reason}
-
-    # ── Step 5: AI Reconciliation ──────────────────────────────────────────
-    ai_result = await reconcile_narration(
-        raw_narration=raw_narration,
-        system_prompt=wallet.system_prompt,
-        amount_kobo=amount_kobo,
+    # ── Step 3: Enqueue background task ────────────────────────────────────
+    await request.app.state.arq_pool.enqueue_job(
+        "process_inbound_webhook_task",
+        developer_id,
+        payload
     )
 
-    # Route to suspense if AI confidence is too low
-    if ai_result.get("confidence_score", 1.0) < settings.AI_CONFIDENCE_THRESHOLD:
-        if "MISDIRECTION_SUSPECTED" in ai_result.get("flags", []):
-            reason = "AI_MISDIRECTION_SUSPECTED"
-        else:
-            reason = "AI_LOW_CONFIDENCE"
-        await create_suspense_item(
-            developer_id=developer_id,
-            account_number=account_number,
-            amount_kobo=amount_kobo,
-            sender_name=sender_name,
-            raw_narration=raw_narration,
-            nomba_reference=nomba_reference,
-            reason=reason,
-            raw_payload=payload,
-            db=db,
-        )
-        await db.commit()
-        return {"status": "ok", "routed_to": "suspense", "reason": reason}
-
-    # ── Step 6: Write to ledger (atomic, idempotent) ───────────────────────
-    try:
-        entry = await record_credit(
-            wallet=wallet,
-            amount_kobo=amount_kobo,
-            nomba_reference=nomba_reference,
-            developer_id=developer_id,
-            sender_name=sender_name,
-            sender_account=sender_account,
-            raw_narration=raw_narration,
-            ai_metadata=ai_result,
-            db=db,
-        )
-    except BadRequestError:
-        # Duplicate reference — idempotent success
-        return {"status": "ok", "note": "duplicate_ignored"}
-
-    # ── Step 7: Evaluate agents ────────────────────────────────────────────
-    from app.services.agent_runner import evaluate_agents
-    await evaluate_agents(wallet=wallet, new_credit_amount=amount_kobo, db=db)
-
-    await db.commit()
-
-    # ── Step 8: Dispatch enriched outbound webhook ─────────────────────────
-    outbound_result = await db.execute(
-        select(OutboundWebhook).where(OutboundWebhook.developer_id == developer_id)
-    )
-    outbound_webhook = outbound_result.scalar_one_or_none()
-
-    if outbound_webhook and outbound_webhook.is_active:
-        new_balance = entry.balance_after
-        await dispatch_event(
-            developer_id=developer_id,
-            event_type="ledger.credit",
-            data={
-                "wallet_id": str(wallet.id),
-                "customer_reference": wallet.customer_reference,
-                "transaction_id": str(entry.id),
-                "amount": amount_kobo,
-                "new_balance": new_balance,
-                "currency": wallet.currency,
-                "sender_name": sender_name,
-                "avenue_intelligence": ai_result,
-            },
-            webhook_url=outbound_webhook.url,
-            signing_secret=outbound_webhook.signing_secret,
-            db=db,
-        )
-        await db.commit()
-
-    return {"status": "ok", "transaction_id": str(entry.id)}
+    return {"status": "ok", "note": "queued"}
+    # return {"status": "ok", "transaction_id": str(entry.id)}
