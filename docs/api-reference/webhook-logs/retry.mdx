@@ -21,9 +21,12 @@ description: 'Manually trigger a retry for a failed outbound webhook delivery.'
 <ResponseExample>
 ```json
 {
-  "log_id": "log_001",
-  "status": "PENDING",
-  "message": "Retry queued successfully."
+  "success": true,
+  "data": {
+    "log_id": "log_001",
+    "status": "PENDING",
+    "message": "Retry queued successfully."
+  }
 }
 ```
 </ResponseExample>

@@ -25,6 +25,8 @@ from app.schemas.wallet import (
 )
 from app.services import ledger as ledger_service
 from app.services.nomba import create_virtual_account, initiate_transfer
+from app.schemas.base import StandardResponse
+from typing import Any
 
 router = APIRouter()
 
@@ -34,7 +36,7 @@ def _check_wallet_owner(wallet: Wallet, developer: Developer):
         raise ForbiddenError("You do not have access to this wallet.")
 
 
-@router.post("", response_model=WalletResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=StandardResponse[WalletResponse], status_code=status.HTTP_201_CREATED)
 async def create_wallet(
     body: CreateWalletRequest,
     developer: Developer = CurrentDeveloper,
@@ -81,10 +83,10 @@ async def create_wallet(
     await db.refresh(wallet)
 
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.get("", response_model=WalletListResponse)
+@router.get("", response_model=StandardResponse[WalletListResponse])
 async def list_wallets(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
@@ -111,10 +113,10 @@ async def list_wallets(
         balance = await ledger_service.get_wallet_balance(w.id, db)
         items.append(_wallet_to_response(w, balance))
 
-    return WalletListResponse(items=items, total=total, page=page, limit=limit)
+    return StandardResponse(data=WalletListResponse(items=items, total=total, page=page, limit=limit))
 
 
-@router.get("/{wallet_id}", response_model=WalletResponse)
+@router.get("/{wallet_id}", response_model=StandardResponse[WalletResponse])
 async def get_wallet(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -122,10 +124,10 @@ async def get_wallet(
 ):
     wallet = await _get_wallet_or_404(wallet_id, developer, db)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.patch("/{wallet_id}", response_model=WalletResponse)
+@router.patch("/{wallet_id}", response_model=StandardResponse[WalletResponse])
 async def update_wallet(
     wallet_id: uuid.UUID,
     body: UpdateWalletRequest,
@@ -144,10 +146,10 @@ async def update_wallet(
     await db.commit()
     await db.refresh(wallet)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.post("/{wallet_id}/close", response_model=WalletResponse)
+@router.post("/{wallet_id}/close", response_model=StandardResponse[WalletResponse])
 async def close_wallet(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -160,10 +162,10 @@ async def close_wallet(
     await db.commit()
     await db.refresh(wallet)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.post("/{wallet_id}/freeze", response_model=WalletResponse)
+@router.post("/{wallet_id}/freeze", response_model=StandardResponse[WalletResponse])
 async def freeze_wallet(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -176,10 +178,10 @@ async def freeze_wallet(
     await db.commit()
     await db.refresh(wallet)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.post("/{wallet_id}/unfreeze", response_model=WalletResponse)
+@router.post("/{wallet_id}/unfreeze", response_model=StandardResponse[WalletResponse])
 async def unfreeze_wallet(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -192,10 +194,10 @@ async def unfreeze_wallet(
     await db.commit()
     await db.refresh(wallet)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return _wallet_to_response(wallet, balance)
+    return StandardResponse(data=_wallet_to_response(wallet, balance))
 
 
-@router.get("/{wallet_id}/balance", response_model=WalletBalanceResponse)
+@router.get("/{wallet_id}/balance", response_model=StandardResponse[WalletBalanceResponse])
 async def get_wallet_balance(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -203,25 +205,25 @@ async def get_wallet_balance(
 ):
     wallet = await _get_wallet_or_404(wallet_id, developer, db)
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return WalletBalanceResponse(wallet_id=wallet.id, balance=balance, currency=wallet.currency)
+    return StandardResponse(data=WalletBalanceResponse(wallet_id=wallet.id, balance=balance, currency=wallet.currency))
 
 
-@router.get("/{wallet_id}/account")
+@router.get("/{wallet_id}/account", response_model=StandardResponse[Any])
 async def get_wallet_account(
     wallet_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
     db: AsyncSession = Depends(get_db),
 ):
     wallet = await _get_wallet_or_404(wallet_id, developer, db)
-    return {
+    return StandardResponse(data={
         "wallet_id": str(wallet.id),
         "account_number": wallet.account_number,
         "bank_name": wallet.bank_name,
         "account_name": wallet.account_name,
-    }
+    })
 
 
-@router.post("/{wallet_id}/transfer", response_model=TransferResponse)
+@router.post("/{wallet_id}/transfer", response_model=StandardResponse[TransferResponse])
 async def transfer_funds(
     wallet_id: uuid.UUID,
     body: TransferRequest,
@@ -266,13 +268,13 @@ async def transfer_funds(
             db=db,
         )
         await db.commit()
-        return TransferResponse(
+        return StandardResponse(data=TransferResponse(
             status="SUCCESS",
             transaction_id=str(debit_entry.id),
             nomba_reference=debit_entry.nomba_reference,
             new_balance=debit_entry.balance_after,
             currency=wallet.currency,
-        )
+        ))
     
     # External transfer via Nomba
     if not body.destination_bank_code or not body.destination_account_name:
@@ -313,13 +315,13 @@ async def transfer_funds(
         debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
         await db.commit()
 
-        return TransferResponse(
+        return StandardResponse(data=TransferResponse(
             status="PROCESSING",
             transaction_id=str(debit_entry.id),
             nomba_reference=debit_entry.nomba_reference,
             new_balance=debit_entry.balance_after,
             currency=wallet.currency,
-        )
+        ))
     except Exception as e:
         # Transfer failed immediately, refund the wallet
         await db.rollback()

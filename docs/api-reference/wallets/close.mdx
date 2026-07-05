@@ -21,9 +21,12 @@ description: 'Deactivate a wallet. Any future inbound transfers to its NUBAN wil
 <ResponseExample>
 ```json
 {
-  "wallet_id": "wal_abc123",
-  "status": "CLOSED",
-  "message": "Wallet has been successfully closed."
+  "success": true,
+  "data": {
+    "wallet_id": "wal_abc123",
+    "status": "CLOSED",
+    "message": "Wallet has been successfully closed."
+  }
 }
 ```
 </ResponseExample>

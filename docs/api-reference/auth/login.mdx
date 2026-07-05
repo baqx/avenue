@@ -18,9 +18,12 @@ description: 'Authenticate and receive a JWT access token.'
 <ResponseExample>
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "developer_id": "dev_abc123",
-  "token_type": "bearer"
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "developer_id": "dev_abc123",
+    "token_type": "bearer"
+  }
 }
 ```
 </ResponseExample>

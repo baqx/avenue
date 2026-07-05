@@ -30,18 +30,21 @@ description: 'Retrieve a paginated list of all provisioned wallets.'
 <ResponseExample>
 ```json
 {
-  "data": [
-    {
-      "wallet_id": "wal_abc123",
-      "customer_reference": "user_987",
-      "account_number": "2211334455",
-      "balance": 1500000,
-      "status": "ACTIVE"
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "wallet_id": "wal_abc123",
+        "customer_reference": "user_987",
+        "account_number": "2211334455",
+        "balance": 1500000,
+        "status": "ACTIVE"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "total": 45
     }
-  ],
-  "meta": {
-    "page": 1,
-    "total": 45
   }
 }
 ```

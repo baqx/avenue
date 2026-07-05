@@ -30,9 +30,12 @@ description: 'Enable or disable an agent without deleting it.'
 <ResponseExample>
 ```json
 {
-  "agent_id": "agt_987",
-  "is_active": false,
-  "message": "Agent has been disabled."
+  "success": true,
+  "data": {
+    "agent_id": "agt_987",
+    "is_active": false,
+    "message": "Agent has been disabled."
+  }
 }
 ```
 </ResponseExample>

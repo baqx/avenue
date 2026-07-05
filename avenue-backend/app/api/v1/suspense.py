@@ -12,12 +12,14 @@ from app.db.models.suspense import SuspenseItem
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
 from app.schemas.suspense import FlagSuspenseRequest, ResolveSuspenseRequest, SuspenseItemResponse, SuspenseListResponse
+from app.schemas.base import StandardResponse
+from typing import Any
 from app.services.ledger import record_credit
 
 router = APIRouter()
 
 
-@router.get("", response_model=SuspenseListResponse)
+@router.get("", response_model=StandardResponse[SuspenseListResponse])
 async def list_suspense(
     page: int = Query(1, ge=1), limit: int = Query(20),
     status_filter: str | None = Query(None, alias="status"),
@@ -33,16 +35,16 @@ async def list_suspense(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     result = await db.execute(query.order_by(SuspenseItem.created_at.desc()).offset((page - 1) * limit).limit(limit))
     items = result.scalars().all()
-    return SuspenseListResponse(items=[SuspenseItemResponse.model_validate(i) for i in items], total=total, page=page, limit=limit)
+    return StandardResponse(data=SuspenseListResponse(items=[SuspenseItemResponse.model_validate(i) for i in items], total=total, page=page, limit=limit))
 
 
-@router.get("/{suspense_id}", response_model=SuspenseItemResponse)
+@router.get("/{suspense_id}", response_model=StandardResponse[SuspenseItemResponse])
 async def get_suspense_item(suspense_id: uuid.UUID, developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db)):
     item = await _get_item_or_404(suspense_id, developer, db)
-    return SuspenseItemResponse.model_validate(item)
+    return StandardResponse(data=SuspenseItemResponse.model_validate(item))
 
 
-@router.post("/{suspense_id}/resolve")
+@router.post("/{suspense_id}/resolve", response_model=StandardResponse[Any])
 async def resolve_suspense(
     suspense_id: uuid.UUID, body: ResolveSuspenseRequest,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -69,10 +71,10 @@ async def resolve_suspense(
     item.resolved_by = "manual"
     item.resolution_note = body.note
     await db.commit()
-    return {"message": "Suspense item resolved.", "action": body.action}
+    return StandardResponse(data={"message": "Suspense item resolved.", "action": body.action})
 
 
-@router.post("/{suspense_id}/flag")
+@router.post("/{suspense_id}/flag", response_model=StandardResponse[Any])
 async def flag_suspense(
     suspense_id: uuid.UUID, body: FlagSuspenseRequest,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -81,7 +83,7 @@ async def flag_suspense(
     item.status = "FLAGGED"
     item.resolution_note = body.note
     await db.commit()
-    return {"message": "Suspense item flagged."}
+    return StandardResponse(data={"message": "Suspense item flagged."})
 
 
 async def _get_item_or_404(suspense_id: uuid.UUID, developer: Developer, db: AsyncSession) -> SuspenseItem:

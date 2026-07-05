@@ -39,10 +39,13 @@ description: 'Attach an automated trigger-action rule to a specific wallet.'
 <ResponseExample>
 ```json
 {
-  "agent_id": "agt_987",
-  "name": "Auto-Sweep on Full Payment",
-  "trigger": "BALANCE_ABOVE",
-  "status": "ACTIVE"
+  "success": true,
+  "data": {
+    "agent_id": "agt_987",
+    "name": "Auto-Sweep on Full Payment",
+    "trigger": "BALANCE_ABOVE",
+    "status": "ACTIVE"
+  }
 }
 ```
 </ResponseExample>

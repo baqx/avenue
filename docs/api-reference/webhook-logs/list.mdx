@@ -24,15 +24,18 @@ description: 'List all outbound webhook delivery attempts from Avenue to your ap
 <ResponseExample>
 ```json
 {
-  "data": [
-    {
-      "log_id": "log_001",
-      "event_type": "ledger.credit",
-      "status": "DELIVERED",
-      "http_status_code": 200,
-      "created_at": "2026-07-01T12:00:00Z"
-    }
-  ]
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "log_id": "log_001",
+        "event_type": "ledger.credit",
+        "status": "DELIVERED",
+        "http_status_code": 200,
+        "created_at": "2026-07-01T12:00:00Z"
+      }
+    ]
+  }
 }
 ```
 </ResponseExample>

@@ -21,22 +21,27 @@ description: 'Retrieve a single transaction, including the full Avenue Intellige
 <ResponseExample>
 ```json
 {
-  "transaction_id": "tx_xyz999",
-  "wallet_id": "wal_abc123",
-  "type": "CREDIT",
-  "amount": 25000,
-  "balance_before": 0,
-  "balance_after": 25000,
-  "status": "SETTLED",
-  "nomba_reference": "NOM-TXN-12345",
-  "sender_name": "Emeka Okafor",
-  "avenue_intelligence": {
-    "raw_narration": "From papa for chidi school fees term 1 part 1",
-    "extracted_intent": "Partial payment for Term 1 school fees",
-    "confidence_score": 0.97,
-    "flags": ["UNDERPAYMENT_DETECTED"]
-  },
-  "created_at": "2026-07-01T12:00:00Z"
+  "success": true,
+  "data": {
+    "transaction_id": "tx_xyz999",
+    "wallet_id": "wal_abc123",
+    "type": "CREDIT",
+    "amount": 25000,
+    "balance_before": 0,
+    "balance_after": 25000,
+    "status": "SETTLED",
+    "nomba_reference": "NOM-TXN-12345",
+    "sender_name": "Emeka Okafor",
+    "avenue_intelligence": {
+      "raw_narration": "From papa for chidi school fees term 1 part 1",
+      "extracted_intent": "Partial payment for Term 1 school fees",
+      "confidence_score": 0.97,
+      "flags": [
+        "UNDERPAYMENT_DETECTED"
+      ]
+    },
+    "created_at": "2026-07-01T12:00:00Z"
+  }
 }
 ```
 </ResponseExample>

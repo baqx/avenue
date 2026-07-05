@@ -21,17 +21,20 @@ description: 'List all agents globally across all wallets.'
 <ResponseExample>
 ```json
 {
-  "data": [
-    {
-      "agent_id": "agt_987",
-      "wallet_id": "wal_abc123",
-      "name": "Auto-Sweep on Full Payment",
-      "trigger": "BALANCE_ABOVE",
-      "action": "SWEEP",
-      "is_active": true,
-      "trigger_count": 4
-    }
-  ]
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "agent_id": "agt_987",
+        "wallet_id": "wal_abc123",
+        "name": "Auto-Sweep on Full Payment",
+        "trigger": "BALANCE_ABOVE",
+        "action": "SWEEP",
+        "is_active": true,
+        "trigger_count": 4
+      }
+    ]
+  }
 }
 ```
 </ResponseExample>

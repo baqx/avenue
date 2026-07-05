@@ -21,16 +21,18 @@ from app.schemas.developer import (
     UpdateDeveloperRequest,
 )
 from app.services.encryption import encrypt
+from app.schemas.base import StandardResponse
+from typing import Any
 
 router = APIRouter()
 
 
-@router.get("/me", response_model=DeveloperProfile)
+@router.get("/me", response_model=StandardResponse[DeveloperProfile])
 async def get_profile(developer: Developer = CurrentDeveloperJWT):
-    return DeveloperProfile.model_validate(developer)
+    return StandardResponse(data=DeveloperProfile.model_validate(developer))
 
 
-@router.patch("/me", response_model=DeveloperProfile)
+@router.patch("/me", response_model=StandardResponse[DeveloperProfile])
 async def update_profile(
     body: UpdateDeveloperRequest,
     developer: Developer = CurrentDeveloperJWT,
@@ -42,10 +44,10 @@ async def update_profile(
         developer.email = body.email
     await db.commit()
     await db.refresh(developer)
-    return DeveloperProfile.model_validate(developer)
+    return StandardResponse(data=DeveloperProfile.model_validate(developer))
 
 
-@router.patch("/me/password")
+@router.patch("/me/password", response_model=StandardResponse[Any])
 async def change_password(
     body: ChangePasswordRequest,
     developer: Developer = CurrentDeveloperJWT,
@@ -55,15 +57,15 @@ async def change_password(
         raise BadRequestError("Current password is incorrect.")
     developer.hashed_password = hash_password(body.new_password)
     await db.commit()
-    return {"message": "Password changed successfully."}
+    return StandardResponse(data={"message": "Password changed successfully."})
 
 
-@router.get("/me/keys", response_model=list[ApiKeyResponse])
+@router.get("/me/keys", response_model=StandardResponse[list[ApiKeyResponse]])
 async def list_api_keys(developer: Developer = CurrentDeveloperJWT):
-    return [ApiKeyResponse.model_validate(k) for k in developer.api_keys if k.revoked_at is None]
+    return StandardResponse(data=[ApiKeyResponse.model_validate(k) for k in developer.api_keys if k.revoked_at is None])
 
 
-@router.post("/me/keys", response_model=NewApiKeyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/me/keys", response_model=StandardResponse[NewApiKeyResponse], status_code=status.HTTP_201_CREATED)
 async def create_api_key(
     body: CreateApiKeyRequest,
     developer: Developer = CurrentDeveloperJWT,
@@ -74,7 +76,7 @@ async def create_api_key(
     db.add(key)
     await db.commit()
     await db.refresh(key)
-    return NewApiKeyResponse(id=key.id, full_key=full_key, key_prefix=prefix, label=body.label, type=body.type, created_at=key.created_at)
+    return StandardResponse(data=NewApiKeyResponse(id=key.id, full_key=full_key, key_prefix=prefix, label=body.label, type=body.type, created_at=key.created_at))
 
 
 @router.delete("/me/keys/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -87,7 +89,7 @@ async def revoke_api_key(key_id: uuid.UUID, developer: Developer = CurrentDevelo
     await db.commit()
 
 
-@router.post("/me/nomba-config", response_model=NombaConfigResponse)
+@router.post("/me/nomba-config", response_model=StandardResponse[NombaConfigResponse])
 async def save_nomba_config(
     body: NombaConfigRequest,
     developer: Developer = CurrentDeveloperJWT,
@@ -111,34 +113,34 @@ async def save_nomba_config(
         db.add(config)
     await db.commit()
     await db.refresh(config)
-    return NombaConfigResponse(
+    return StandardResponse(data=NombaConfigResponse(
         account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••" + body.client_secret[-4:],
         inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
-    )
+    ))
 
 
-@router.get("/me/nomba-config", response_model=NombaConfigResponse)
+@router.get("/me/nomba-config", response_model=StandardResponse[NombaConfigResponse])
 async def get_nomba_config(developer: Developer = CurrentDeveloperJWT, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
     config = result.scalar_one_or_none()
     if not config:
         raise NotFoundError("Nomba configuration")
-    return NombaConfigResponse(
+    return StandardResponse(data=NombaConfigResponse(
         account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••",
         inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
-    )
+    ))
 
 
-@router.get("/me/inbound-webhook-url")
+@router.get("/me/inbound-webhook-url", response_model=StandardResponse[Any])
 async def get_inbound_webhook_url(developer: Developer = CurrentDeveloperJWT):
-    return {"url": f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}"}
+    return StandardResponse(data={"url": f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}"})
 
 
-@router.post("/me/outbound-webhook", response_model=OutboundWebhookResponse)
+@router.post("/me/outbound-webhook", response_model=StandardResponse[OutboundWebhookResponse])
 async def set_outbound_webhook(
     body: OutboundWebhookRequest,
     developer: Developer = CurrentDeveloperJWT,
@@ -153,16 +155,16 @@ async def set_outbound_webhook(
         db.add(webhook)
     await db.commit()
     await db.refresh(webhook)
-    return OutboundWebhookResponse.model_validate(webhook)
+    return StandardResponse(data=OutboundWebhookResponse.model_validate(webhook))
 
 
-@router.get("/me/outbound-webhook", response_model=OutboundWebhookResponse)
+@router.get("/me/outbound-webhook", response_model=StandardResponse[OutboundWebhookResponse])
 async def get_outbound_webhook(developer: Developer = CurrentDeveloperJWT, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(OutboundWebhook).where(OutboundWebhook.developer_id == developer.id))
     webhook = result.scalar_one_or_none()
     if not webhook:
         raise NotFoundError("Outbound webhook")
-    return OutboundWebhookResponse.model_validate(webhook)
+    return StandardResponse(data=OutboundWebhookResponse.model_validate(webhook))
 
 
 @router.delete("/me/outbound-webhook", status_code=status.HTTP_204_NO_CONTENT)

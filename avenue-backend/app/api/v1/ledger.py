@@ -11,11 +11,12 @@ from app.db.models.ledger import LedgerEntry
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
 from app.schemas.ledger import TransactionListResponse, TransactionResponse
+from app.schemas.base import StandardResponse
 
 router = APIRouter()
 
 
-@router.get("/wallets/{wallet_id}/transactions", response_model=TransactionListResponse)
+@router.get("/wallets/{wallet_id}/transactions", response_model=StandardResponse[TransactionListResponse])
 async def list_wallet_transactions(
     wallet_id: uuid.UUID,
     page: int = Query(1, ge=1),
@@ -34,10 +35,10 @@ async def list_wallet_transactions(
     result = await db.execute(query)
     entries = result.scalars().all()
     items = [TransactionResponse.from_orm_with_ai(e) for e in entries]
-    return TransactionListResponse(items=items, total=total, page=page, limit=limit)
+    return StandardResponse(data=TransactionListResponse(items=items, total=total, page=page, limit=limit))
 
 
-@router.get("/wallets/{wallet_id}/transactions/{tx_id}", response_model=TransactionResponse)
+@router.get("/wallets/{wallet_id}/transactions/{tx_id}", response_model=StandardResponse[TransactionResponse])
 async def get_wallet_transaction(
     wallet_id: uuid.UUID,
     tx_id: uuid.UUID,
@@ -51,10 +52,10 @@ async def get_wallet_transaction(
     entry = result.scalar_one_or_none()
     if not entry:
         raise NotFoundError("Transaction")
-    return TransactionResponse.from_orm_with_ai(entry)
+    return StandardResponse(data=TransactionResponse.from_orm_with_ai(entry))
 
 
-@router.get("/transactions", response_model=TransactionListResponse)
+@router.get("/transactions", response_model=StandardResponse[TransactionListResponse])
 async def list_all_transactions(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
@@ -67,10 +68,10 @@ async def list_all_transactions(
     result = await db.execute(query)
     entries = result.scalars().all()
     items = [TransactionResponse.from_orm_with_ai(e) for e in entries]
-    return TransactionListResponse(items=items, total=total, page=page, limit=limit)
+    return StandardResponse(data=TransactionListResponse(items=items, total=total, page=page, limit=limit))
 
 
-@router.get("/transactions/{tx_id}", response_model=TransactionResponse)
+@router.get("/transactions/{tx_id}", response_model=StandardResponse[TransactionResponse])
 async def get_transaction(
     tx_id: uuid.UUID,
     developer: Developer = CurrentDeveloper,
@@ -82,7 +83,7 @@ async def get_transaction(
     entry = result.scalar_one_or_none()
     if not entry:
         raise NotFoundError("Transaction")
-    return TransactionResponse.from_orm_with_ai(entry)
+    return StandardResponse(data=TransactionResponse.from_orm_with_ai(entry))
 
 
 async def _assert_wallet_ownership(wallet_id: uuid.UUID, developer: Developer, db: AsyncSession):

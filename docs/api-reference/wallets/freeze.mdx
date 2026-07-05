@@ -21,9 +21,12 @@ description: 'Temporarily freeze a wallet. Incoming payments will go to Suspense
 <ResponseExample>
 ```json
 {
-  "wallet_id": "wal_abc123",
-  "status": "FROZEN",
-  "message": "Wallet has been successfully frozen."
+  "success": true,
+  "data": {
+    "wallet_id": "wal_abc123",
+    "status": "FROZEN",
+    "message": "Wallet has been successfully frozen."
+  }
 }
 ```
 </ResponseExample>

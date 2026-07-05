@@ -21,16 +21,22 @@ description: 'Retrieve a chronological statement (credits and debits) for a spec
 <ResponseExample>
 ```json
 {
-  "data": [
-    {
-      "date": "2026-07-01T12:00:00Z",
-      "type": "CREDIT",
-      "amount": 25000,
-      "running_balance": 50000,
-      "narration": "Transfer from Emeka"
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "date": "2026-07-01T12:00:00Z",
+        "type": "CREDIT",
+        "amount": 25000,
+        "running_balance": 50000,
+        "narration": "Transfer from Emeka"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "total": 12
     }
-  ],
-  "meta": { "page": 1, "total": 12 }
+  }
 }
 ```
 </ResponseExample>

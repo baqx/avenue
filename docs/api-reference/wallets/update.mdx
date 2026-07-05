@@ -30,10 +30,13 @@ description: 'Update the metadata or system prompt for an existing wallet.'
 <ResponseExample>
 ```json
 {
-  "wallet_id": "wal_abc123",
-  "label": "Updated Label",
-  "system_prompt": "New system prompt",
-  "status": "success"
+  "success": true,
+  "data": {
+    "wallet_id": "wal_abc123",
+    "label": "Updated Label",
+    "system_prompt": "New system prompt",
+    "status": "success"
+  }
 }
 ```
 </ResponseExample>

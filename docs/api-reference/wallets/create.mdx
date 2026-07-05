@@ -39,20 +39,23 @@ description: 'Provision a new virtual NUBAN and create a ledger wallet.'
 <ResponseExample>
 ```json
 {
-  "wallet_id": "wal_abc123",
-  "customer_reference": "user_987",
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john.doe@example.com",
-  "label": "John Doe — School Fees",
-  "account_number": "2211334455",
-  "bank_name": "Nomba MFB",
-  "account_name": "PropTech Inc / John Doe",
-  "balance": 0,
-  "currency": "NGN",
-  "status": "ACTIVE",
-  "system_prompt": "This wallet collects school fees...",
-  "created_at": "2026-07-01T11:00:00Z"
+  "success": true,
+  "data": {
+    "wallet_id": "wal_abc123",
+    "customer_reference": "user_987",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com",
+    "label": "John Doe \u2014 School Fees",
+    "account_number": "2211334455",
+    "bank_name": "Nomba MFB",
+    "account_name": "PropTech Inc / John Doe",
+    "balance": 0,
+    "currency": "NGN",
+    "status": "ACTIVE",
+    "system_prompt": "This wallet collects school fees...",
+    "created_at": "2026-07-01T11:00:00Z"
+  }
 }
 ```
 </ResponseExample>

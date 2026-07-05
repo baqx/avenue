@@ -24,15 +24,18 @@ description: 'List all items caught by the Suspense Engine awaiting manual resol
 <ResponseExample>
 ```json
 {
-  "data": [
-    {
-      "suspense_id": "susp_112",
-      "account_number": "2211334455",
-      "amount": 50000,
-      "reason": "AI_LOW_CONFIDENCE",
-      "status": "PENDING"
-    }
-  ]
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "suspense_id": "susp_112",
+        "account_number": "2211334455",
+        "amount": 50000,
+        "reason": "AI_LOW_CONFIDENCE",
+        "status": "PENDING"
+      }
+    ]
+  }
 }
 ```
 </ResponseExample>

@@ -15,11 +15,12 @@ from app.schemas.agent import (
     AgentListResponse, AgentLogResponse, AgentResponse,
     CreateAgentRequest, ToggleAgentRequest, UpdateAgentRequest,
 )
+from app.schemas.base import StandardResponse
 
 router = APIRouter()
 
 
-@router.post("/wallets/{wallet_id}/agents", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/wallets/{wallet_id}/agents", response_model=StandardResponse[AgentResponse], status_code=status.HTTP_201_CREATED)
 async def create_agent(
     wallet_id: uuid.UUID, body: CreateAgentRequest,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -33,10 +34,10 @@ async def create_agent(
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
-    return AgentResponse.model_validate(agent)
+    return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
-@router.get("/wallets/{wallet_id}/agents", response_model=AgentListResponse)
+@router.get("/wallets/{wallet_id}/agents", response_model=StandardResponse[AgentListResponse])
 async def list_wallet_agents(
     wallet_id: uuid.UUID, page: int = Query(1, ge=1), limit: int = Query(20),
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -46,19 +47,19 @@ async def list_wallet_agents(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     result = await db.execute(query.offset((page - 1) * limit).limit(limit))
     agents = result.scalars().all()
-    return AgentListResponse(items=[AgentResponse.model_validate(a) for a in agents], total=total, page=page, limit=limit)
+    return StandardResponse(data=AgentListResponse(items=[AgentResponse.model_validate(a) for a in agents], total=total, page=page, limit=limit))
 
 
-@router.get("/wallets/{wallet_id}/agents/{agent_id}", response_model=AgentResponse)
+@router.get("/wallets/{wallet_id}/agents/{agent_id}", response_model=StandardResponse[AgentResponse])
 async def get_agent(
     wallet_id: uuid.UUID, agent_id: uuid.UUID,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
 ):
     agent = await _get_agent_or_404(agent_id, wallet_id, developer, db)
-    return AgentResponse.model_validate(agent)
+    return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
-@router.patch("/wallets/{wallet_id}/agents/{agent_id}", response_model=AgentResponse)
+@router.patch("/wallets/{wallet_id}/agents/{agent_id}", response_model=StandardResponse[AgentResponse])
 async def update_agent(
     wallet_id: uuid.UUID, agent_id: uuid.UUID, body: UpdateAgentRequest,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -74,10 +75,10 @@ async def update_agent(
         agent.sweep_amount = body.sweep_amount
     await db.commit()
     await db.refresh(agent)
-    return AgentResponse.model_validate(agent)
+    return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
-@router.patch("/wallets/{wallet_id}/agents/{agent_id}/toggle", response_model=AgentResponse)
+@router.patch("/wallets/{wallet_id}/agents/{agent_id}/toggle", response_model=StandardResponse[AgentResponse])
 async def toggle_agent(
     wallet_id: uuid.UUID, agent_id: uuid.UUID, body: ToggleAgentRequest,
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -86,7 +87,7 @@ async def toggle_agent(
     agent.is_active = body.is_active
     await db.commit()
     await db.refresh(agent)
-    return AgentResponse.model_validate(agent)
+    return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
 @router.delete("/wallets/{wallet_id}/agents/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -99,7 +100,7 @@ async def delete_agent(
     await db.commit()
 
 
-@router.get("/agents", response_model=AgentListResponse)
+@router.get("/agents", response_model=StandardResponse[AgentListResponse])
 async def list_all_agents(
     page: int = Query(1, ge=1), limit: int = Query(20),
     developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db),
@@ -108,7 +109,7 @@ async def list_all_agents(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     result = await db.execute(query.offset((page - 1) * limit).limit(limit))
     agents = result.scalars().all()
-    return AgentListResponse(items=[AgentResponse.model_validate(a) for a in agents], total=total, page=page, limit=limit)
+    return StandardResponse(data=AgentListResponse(items=[AgentResponse.model_validate(a) for a in agents], total=total, page=page, limit=limit))
 
 
 @router.get("/agents/{agent_id}/logs")
@@ -123,7 +124,7 @@ async def get_agent_logs(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     result = await db.execute(query.order_by(AgentLog.created_at.desc()).offset((page - 1) * limit).limit(limit))
     logs = result.scalars().all()
-    return {"items": [AgentLogResponse.model_validate(l) for l in logs], "total": total, "page": page, "limit": limit}
+    return StandardResponse(data={"items": [AgentLogResponse.model_validate(l) for l in logs], "total": total, "page": page, "limit": limit})
 
 
 async def _get_wallet_or_404(wallet_id: uuid.UUID, developer: Developer, db: AsyncSession) -> Wallet:

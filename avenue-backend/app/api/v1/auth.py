@@ -27,12 +27,14 @@ from app.schemas.auth import (
     TokenResponse,
     VerifyEmailRequest,
 )
+from app.schemas.base import StandardResponse
+from typing import Any
 from app.services.email import send_password_reset_email, send_verification_email
 
 router = APIRouter()
 
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=StandardResponse[Any], status_code=status.HTTP_201_CREATED)
 async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
     # Check email uniqueness
     result = await db.execute(select(Developer).where(Developer.email == body.email))
@@ -57,10 +59,10 @@ async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await send_verification_email(body.email, body.company_name, verification_token)
 
-    return {"message": "Account created. Please check your email to verify your account."}
+    return StandardResponse(data={"message": "Account created. Please check your email to verify your account."})
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=StandardResponse[TokenResponse])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Developer).where(Developer.email == body.email))
     developer = result.scalar_one_or_none()
@@ -72,10 +74,10 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise BadRequestError("Please verify your email before logging in.")
 
     token = create_access_token(str(developer.id))
-    return TokenResponse(access_token=token, developer_id=str(developer.id))
+    return StandardResponse(data=TokenResponse(access_token=token, developer_id=str(developer.id)))
 
 
-@router.post("/verify-email")
+@router.post("/verify-email", response_model=StandardResponse[Any])
 async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Developer).where(Developer.verification_token == body.token)
@@ -88,24 +90,24 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     developer.verified_at = datetime.now(timezone.utc)
     developer.verification_token = None
     await db.commit()
-    return {"message": "Email verified successfully. You can now log in."}
+    return StandardResponse(data={"message": "Email verified successfully. You can now log in."})
 
 
-@router.post("/resend-verification")
+@router.post("/resend-verification", response_model=StandardResponse[Any])
 async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Developer).where(Developer.email == body.email))
     developer = result.scalar_one_or_none()
     if not developer or developer.is_verified:
-        return {"message": "If this account exists and is unverified, a new email will be sent."}
+        return StandardResponse(data={"message": "If this account exists and is unverified, a new email will be sent."})
 
     token = secrets.token_urlsafe(32)
     developer.verification_token = token
     await db.commit()
     await send_verification_email(body.email, developer.company_name, token)
-    return {"message": "Verification email resent."}
+    return StandardResponse(data={"message": "Verification email resent."})
 
 
-@router.post("/forgot-password")
+@router.post("/forgot-password", response_model=StandardResponse[Any])
 async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Developer).where(Developer.email == body.email))
     developer = result.scalar_one_or_none()
@@ -115,10 +117,10 @@ async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depend
         developer.password_reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         await db.commit()
         await send_password_reset_email(body.email, token)
-    return {"message": "If this email exists, a password reset link has been sent."}
+    return StandardResponse(data={"message": "If this email exists, a password reset link has been sent."})
 
 
-@router.post("/reset-password")
+@router.post("/reset-password", response_model=StandardResponse[Any])
 async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Developer).where(Developer.password_reset_token == body.token)
@@ -133,13 +135,13 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     developer.password_reset_token = None
     developer.password_reset_expires_at = None
     await db.commit()
-    return {"message": "Password reset successfully. You can now log in."}
+    return StandardResponse(data={"message": "Password reset successfully. You can now log in."})
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=StandardResponse[Any])
 async def logout(developer: Developer = CurrentDeveloperJWT):
     # JWT is stateless — client should discard the token
-    return {"message": "Logged out successfully."}
+    return StandardResponse(data={"message": "Logged out successfully."})
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

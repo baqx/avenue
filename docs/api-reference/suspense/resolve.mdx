@@ -33,8 +33,11 @@ description: 'Manually resolve an anomalous payment by routing it to a wallet.'
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Item resolved and wallet credited."
+  "success": true,
+  "data": {
+    "status": "success",
+    "message": "Item resolved and wallet credited."
+  }
 }
 ```
 </ResponseExample>

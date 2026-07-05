@@ -12,11 +12,12 @@ from app.db.models.wallet import Wallet
 from app.db.models.webhook_log import WebhookLog
 from app.db.session import get_db
 from app.schemas.analytics import OverviewStats, SuspenseStats, WebhookStats
+from app.schemas.base import StandardResponse
 
 router = APIRouter()
 
 
-@router.get("/overview", response_model=OverviewStats)
+@router.get("/overview", response_model=StandardResponse[OverviewStats])
 async def get_overview(developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db)):
     dev_id = developer.id
     now = datetime.now(timezone.utc)
@@ -41,7 +42,7 @@ async def get_overview(developer: Developer = CurrentDeveloper, db: AsyncSession
     delivered_wh = (await db.execute(select(func.count(WebhookLog.id)).where(WebhookLog.developer_id == dev_id, WebhookLog.status == "DELIVERED"))).scalar() or 0
     delivery_rate = (delivered_wh / total_wh) if total_wh > 0 else 1.0
 
-    return OverviewStats(
+    return StandardResponse(data=OverviewStats(
         total_wallets=sum(wallet_by_status.values()),
         active_wallets=wallet_by_status.get("ACTIVE", 0),
         frozen_wallets=wallet_by_status.get("FROZEN", 0),
@@ -53,10 +54,10 @@ async def get_overview(developer: Developer = CurrentDeveloper, db: AsyncSession
         total_transactions=total_tx,
         pending_suspense_count=pending_suspense,
         webhook_delivery_rate=delivery_rate,
-    )
+    ))
 
 
-@router.get("/suspense", response_model=SuspenseStats)
+@router.get("/suspense", response_model=StandardResponse[SuspenseStats])
 async def get_suspense_stats(developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(SuspenseItem.status, func.count(SuspenseItem.id))
@@ -74,16 +75,16 @@ async def get_suspense_stats(developer: Developer = CurrentDeveloper, db: AsyncS
     )
     by_reason = {row[0]: row[1] for row in reason_result.all()}
 
-    return SuspenseStats(
+    return StandardResponse(data=SuspenseStats(
         pending=by_status.get("PENDING", 0),
         resolved=resolved,
         flagged=by_status.get("FLAGGED", 0),
         resolution_rate=resolved / total if total > 0 else 0.0,
         breakdown_by_reason=by_reason,
-    )
+    ))
 
 
-@router.get("/webhooks", response_model=WebhookStats)
+@router.get("/webhooks", response_model=StandardResponse[WebhookStats])
 async def get_webhook_stats(developer: Developer = CurrentDeveloper, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(WebhookLog.status, func.count(WebhookLog.id))
@@ -93,9 +94,9 @@ async def get_webhook_stats(developer: Developer = CurrentDeveloper, db: AsyncSe
     by_status = {row[0]: row[1] for row in result.all()}
     total = sum(by_status.values())
     delivered = by_status.get("DELIVERED", 0)
-    return WebhookStats(
+    return StandardResponse(data=WebhookStats(
         delivered=delivered,
         failed=by_status.get("FAILED", 0),
         dead=by_status.get("DEAD", 0),
         delivery_rate=delivered / total if total > 0 else 1.0,
-    )
+    ))
