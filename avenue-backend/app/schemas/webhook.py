@@ -11,11 +11,11 @@ class WebhookLogResponse(BaseModel):
     event_type: str
     payload: dict
     status: str
-    http_status_code: Optional[int]
-    response_body: Optional[str]
+    http_status_code: Optional[int] = None
+    response_body: Optional[str] = None
     attempt_count: int
-    next_retry_at: Optional[datetime]
-    delivered_at: Optional[datetime]
+    next_retry_at: Optional[datetime] = None
+    delivered_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

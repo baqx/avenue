@@ -6,9 +6,9 @@ from pydantic import BaseModel
 
 
 class AvenueIntelligence(BaseModel):
-    raw_narration: Optional[str]
-    extracted_intent: Optional[str]
-    confidence_score: Optional[float]
+    raw_narration: Optional[str] = None
+    extracted_intent: Optional[str] = None
+    confidence_score: Optional[float] = None
     flags: list[str] = []
     suggested_label: Optional[str] = None
 
@@ -23,11 +23,11 @@ class TransactionResponse(BaseModel):
     balance_after: int
     currency: str
     status: str
-    nomba_reference: Optional[str]
-    sender_name: Optional[str]
-    sender_account: Optional[str]
-    raw_narration: Optional[str]
-    avenue_intelligence: Optional[AvenueIntelligence]
+    nomba_reference: Optional[str] = None
+    sender_name: Optional[str] = None
+    sender_account: Optional[str] = None
+    raw_narration: Optional[str] = None
+    avenue_intelligence: Optional[AvenueIntelligence] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -61,7 +61,7 @@ class StatementEntry(BaseModel):
     type: str
     amount: int
     balance: int   # Running balance after this entry
-    label: Optional[str]
+    label: Optional[str] = None
     flags: list[str] = []
 
 
