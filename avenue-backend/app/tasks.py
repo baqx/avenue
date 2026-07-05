@@ -158,6 +158,8 @@ async def process_inbound_webhook_task(
                 amount_kobo=amount_kobo,
             )
 
+            print(f"AI Result: {ai_result}")
+
             if ai_result.get("confidence_score", 1.0) < settings.AI_CONFIDENCE_THRESHOLD:
                 if "MISDIRECTION_SUSPECTED" in ai_result.get("flags", []):
                     reason = "AI_MISDIRECTION_SUSPECTED"

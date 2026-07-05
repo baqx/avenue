@@ -126,6 +126,7 @@ async def initiate_transfer(
     destination_account_name: str,
     amount_kobo: int,
     narration: str,
+    sender_name: str,
     merchant_tx_ref: str | None = None,
 ) -> dict:
     """
@@ -157,6 +158,7 @@ async def initiate_transfer(
                 "accountName": destination_account_name,
                 "merchantTxRef": merchant_tx_ref,
                 "narration": narration,
+                "senderName": sender_name,
             },
             timeout=20.0,
         )

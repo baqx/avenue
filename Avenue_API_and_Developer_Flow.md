@@ -299,15 +299,24 @@ Developer registers their own app URL in Avenue (outbound)
 **Internal Processing Pipeline (sequential, atomic):**
 1. Validate Nomba HMAC-SHA256 signature against stored `webhook_signature_key`
 2. Parse and log the raw payload
-3. Idempotency check — if `nomba_reference` exists in `ledger_entries`, return `200 OK` immediately (silent skip)
-4. Look up target wallet by `account_number` — if not found, route to Suspense (`NO_WALLET_FOUND`)
-5. Check wallet status — if `CLOSED` or `FROZEN`, route to Suspense
-6. Run AI reconciliation engine: narration + `system_prompt` → intent + flags
-7. If AI confidence < threshold, route to Suspense (`AI_LOW_CONFIDENCE`)
-8. Execute atomic double-entry ledger write (debit `ASSET` account, credit wallet)
-9. Evaluate all active agents on the wallet — execute triggered actions
-10. Dispatch enriched outbound webhook event to developer's registered URL
-11. Return `200 OK` to Nomba
+3. Route based on event type:
+   - For `payment_success` (inbound transfer):
+     a. Idempotency check — if `nomba_reference` exists in `ledger_entries`, return `200 OK` immediately (silent skip)
+     b. Look up target wallet by `account_number` — if not found, route to Suspense (`NO_WALLET_FOUND`)
+     c. Check wallet status — if `CLOSED` or `FROZEN`, route to Suspense
+     d. Run AI reconciliation engine: narration + `system_prompt` → intent + flags
+     e. If AI confidence < threshold, route to Suspense (`AI_LOW_CONFIDENCE`)
+     f. Execute atomic double-entry ledger write (credit wallet)
+     g. Evaluate all active agents on the wallet — execute triggered actions
+     h. Dispatch `ledger.credit` outbound webhook event to developer's registered URL
+   - For `payout_success` (outbound transfer success):
+     a. Update `PENDING` debit ledger entry to `SETTLED`
+     b. Dispatch `transfer.success` outbound webhook event to developer
+   - For `payout_failed` / `payout_refund` (outbound transfer failure):
+     a. Update `PENDING` debit ledger entry to `REVERSED`
+     b. Record compensatory credit to wallet to refund the failed transfer amount
+     c. Dispatch `transfer.failed` outbound webhook event to developer
+4. Return `200 OK` to Nomba
 
 ---
 

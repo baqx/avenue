@@ -137,6 +137,7 @@ async def _execute_action(
                 destination_account_name=agent.destination_account_name,
                 amount_kobo=sweep_amount,
                 narration=f"Avenue Sweep: {agent.name}",
+                sender_name=f"{wallet.first_name} {wallet.last_name}",
             )
             
             debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
