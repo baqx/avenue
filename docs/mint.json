@@ -1,8 +1,8 @@
 {
   "name": "Avenue",
   "logo": {
-    "light": "https://avenue-cloud.vercel.app/logo/logo.png",
-    "dark": "https://avenue-cloud.vercel.app/logo/logo-inverted.png"
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo-inverted.png"
   },
   "favicon": "https://avenue-cloud.vercel.app/favicon.ico",
   "colors": {
