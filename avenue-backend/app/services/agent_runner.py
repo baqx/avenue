@@ -7,8 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.agent import Agent, AgentLog
+from app.db.models.nomba_config import NombaConfig
 from app.db.models.wallet import Wallet
 from app.services import ledger as ledger_service
+from app.services.nomba import initiate_transfer
 
 
 async def evaluate_agents(
@@ -104,6 +106,41 @@ async def _execute_action(
                     ai_metadata=None,
                     db=db,
                 )
+        elif agent.destination_account_number and agent.destination_bank_code and agent.destination_account_name:
+            # External Bank Sweep via Nomba
+            # 1. Fetch Nomba Config
+            config_result = await db.execute(
+                select(NombaConfig).where(NombaConfig.developer_id == wallet.developer_id)
+            )
+            nomba_config = config_result.scalar_one_or_none()
+            if not nomba_config:
+                raise Exception("Nomba config missing for external agent sweep.")
+
+            # 2. Debit source wallet
+            debit_entry = await ledger_service.record_debit(
+                wallet=wallet,
+                amount_kobo=sweep_amount,
+                developer_id=wallet.developer_id,
+                description=f"Agent external sweep: {agent.name}",
+                db=db,
+            )
+            debit_entry.status = "PENDING"
+            await db.flush()
+
+            # 3. Initiate Transfer
+            transfer_data = await initiate_transfer(
+                account_id=nomba_config.account_id,
+                client_id=nomba_config.client_id,
+                encrypted_secret=nomba_config.encrypted_client_secret,
+                destination_account_number=agent.destination_account_number,
+                destination_bank_code=agent.destination_bank_code,
+                destination_account_name=agent.destination_account_name,
+                amount_kobo=sweep_amount,
+                narration=f"Avenue Sweep: {agent.name}",
+            )
+            
+            debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
+            await db.flush()
     elif agent.action == "LOCK_WALLET":
         wallet.status = "FROZEN"
         await db.flush()

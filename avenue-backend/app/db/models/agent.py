@@ -40,6 +40,9 @@ class Agent(Base):
     destination_wallet_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("wallets.id", ondelete="SET NULL"), nullable=True
     )
+    destination_account_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    destination_bank_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    destination_account_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     sweep_amount: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)  # For PARTIAL_SWEEP
 
     # State

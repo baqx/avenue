@@ -31,7 +31,7 @@ async def get_wallet_balance(wallet_id: uuid.UUID, db: AsyncSession) -> int:
             , 0)
         ).where(
             LedgerEntry.wallet_id == wallet_id,
-            LedgerEntry.status == "SETTLED",
+            LedgerEntry.status.in_(["SETTLED", "PENDING"]),
         )
     )
     balance = result.scalar() or 0

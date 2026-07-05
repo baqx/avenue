@@ -34,6 +34,7 @@ class Wallet(Base):
         default="ACTIVE",
     )
     system_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    allow_transfers_out: Mapped[bool] = mapped_column(default=True, nullable=False, server_default="true")
 
     # Relationships
     developer: Mapped["Developer"] = relationship("Developer", back_populates="wallets")  # type: ignore
