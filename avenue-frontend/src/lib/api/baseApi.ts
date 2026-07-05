@@ -14,6 +14,6 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Wallet', 'Ledger', 'Suspense', 'WebhookLog', 'WebhookConfig', 'Agent'],
+  tagTypes: ['Wallet', 'Ledger', 'Suspense', 'WebhookLog', 'WebhookConfig', 'Agent', 'DeveloperProfile', 'ApiKeys', 'NombaConfig'],
   endpoints: () => ({}),
 });
