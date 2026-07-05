@@ -3,16 +3,16 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
-# ── Async Engine ──────────────────────────────────────────────────────────────
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=not settings.is_production,  # Log SQL in dev only
-    pool_pre_ping=True,               # Verify connections before use
+    pool_pre_ping=True,              
     pool_size=10,
     max_overflow=20,
+    connect_args={"statement_cache_size": 0},
 )
 
-# ── Session Factory ───────────────────────────────────────────────────────────
+
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -22,7 +22,6 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
-# ── FastAPI Dependency ────────────────────────────────────────────────────────
 async def get_db() -> AsyncSession:  # type: ignore
     async with AsyncSessionLocal() as session:
         try:
