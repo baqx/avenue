@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     APP_NAME: str = "Avenue"
     FRONTEND_URL: str = "http://localhost:3000"
+    BACKEND_URL: str = "http://localhost:8000"
 
     # Security
     SECRET_KEY: str

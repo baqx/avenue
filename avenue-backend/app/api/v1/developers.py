@@ -115,7 +115,7 @@ async def save_nomba_config(
         account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••" + body.client_secret[-4:],
-        inbound_webhook_url=f"https://api.avenue.so/v1/webhooks/inbound/{developer.id}",
+        inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
     )
 
 
@@ -129,13 +129,13 @@ async def get_nomba_config(developer: Developer = CurrentDeveloperJWT, db: Async
         account_id=config.account_id,
         client_id=config.client_id,
         client_secret_masked="••••••••",
-        inbound_webhook_url=f"https://api.avenue.so/v1/webhooks/inbound/{developer.id}",
+        inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
     )
 
 
 @router.get("/me/inbound-webhook-url")
 async def get_inbound_webhook_url(developer: Developer = CurrentDeveloperJWT):
-    return {"url": f"https://api.avenue.so/v1/webhooks/inbound/{developer.id}"}
+    return {"url": f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}"}
 
 
 @router.post("/me/outbound-webhook", response_model=OutboundWebhookResponse)
