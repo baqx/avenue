@@ -8,7 +8,7 @@ resend.api_key = settings.RESEND_API_KEY
 
 
 async def send_verification_email(to_email: str, company_name: str, token: str) -> None:
-    verify_url = f"{settings.BACKEND_URL}/verify-email?token={token}"
+    verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
     resend.Emails.send({
         # "from": settings.EMAIL_FROM,
         "from": "onboarding@resend.dev",
@@ -31,7 +31,7 @@ async def send_verification_email(to_email: str, company_name: str, token: str) 
 
 
 async def send_password_reset_email(to_email: str, token: str) -> None:
-    reset_url = f"{settings.BACKEND_URL}/reset-password?token={token}"
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     resend.Emails.send({
         # "from": settings.EMAIL_FROM,
         "from": "onboarding@resend.dev",
