@@ -79,13 +79,11 @@ export default function SuspensePage() {
                     <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Nomba Ref</th>
                     <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Amount</th>
                     <th className="p-4 font-semibold text-[#6a6c6c] text-sm">Reason</th>
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">AI Confidence</th>
                     <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.map((item) => {
-                    const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
                     return (
                     <tr 
                       key={item.id} 
@@ -104,14 +102,6 @@ export default function SuspensePage() {
                           <span>{item.reason}</span>
                         </div>
                       </td>
-                      <td className="p-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Robot weight="fill" className={confScore > 0.5 ? "text-amber-500" : "text-red-500"} />
-                          <span className="font-mono text-xs font-bold text-[#022c22]">
-                            {(confScore * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      </td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <Button 
                           onClick={() => setSelectedItem(item)}
@@ -124,7 +114,7 @@ export default function SuspensePage() {
                   )})}
                   {filteredItems.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-12 text-center text-[#6a6c6c]">
+                      <td colSpan={4} className="p-12 text-center text-[#6a6c6c]">
                         <CheckCircle className="w-12 h-12 mx-auto text-[#10b981] mb-3 opacity-50" />
                         <div className="font-bold text-[#022c22] text-lg">Queue is clear!</div>
                         <div className="text-sm mt-1">No transactions are currently in suspense.</div>
@@ -140,7 +130,6 @@ export default function SuspensePage() {
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">
           {filteredItems.map((item) => {
-            const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
             return (
             <div key={item.id} className="p-4 bg-[#fffbeb]/30">
               <div className="flex justify-between items-start mb-3">
@@ -153,7 +142,7 @@ export default function SuspensePage() {
               <div className="bg-white border border-[#fcd34d] p-3 rounded-lg text-sm text-[#92400e] mb-4">
                 <div className="flex items-center gap-2 font-bold mb-1">
                   <Robot weight="fill" />
-                  AI Confidence: {(confScore * 100).toFixed(0)}%
+                  Resolution Needed
                 </div>
                 {item.reason}
               </div>

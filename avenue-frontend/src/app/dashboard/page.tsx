@@ -11,10 +11,14 @@ import { Button } from "@/components/ui/Button";
 
 import { useGetOverviewStatsQuery } from "@/lib/api/analyticsApi";
 import { useGetGlobalTransactionsQuery } from "@/lib/api/ledgerApi";
+import { useGetProfileQuery } from "@/lib/api/developerApi";
 import { CardShimmer, TableShimmer } from "@/components/ui/Shimmer";
+import { TransactionModal } from "@/components/dashboard/TransactionModal";
 
 export default function DashboardOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  const { data: profile } = useGetProfileQuery();
   const { data: stats, isLoading: isStatsLoading } = useGetOverviewStatsQuery();
   const { data: txData, isLoading: isTxLoading } = useGetGlobalTransactionsQuery({ page: 1, limit: 5 });
   const recentTxs = txData?.items || [];
@@ -24,7 +28,7 @@ export default function DashboardOverview() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Overview</h1>
-          <p className="text-[#6a6c6c] mt-1">Welcome back, Zenith Pay.</p>
+          <p className="text-[#6a6c6c] mt-1">Welcome back{profile?.company_name ? `, ${profile.company_name}` : ''}.</p>
         </div>
         
         <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-[#022c22] text-white hover:bg-[#064e3b]">
@@ -103,21 +107,27 @@ export default function DashboardOverview() {
                 ) : recentTxs.map((tx) => {
                   const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
                   return (
-                    <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
-                      <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</td>
+                    <tr 
+                      key={tx.id} 
+                      className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedTx(tx)}
+                    >
+                      <td className="p-4 font-medium text-[#022c22] whitespace-nowrap truncate max-w-[200px]">
+                        {tx.avenue_intelligence?.suggested_label || tx.raw_narration || "Unknown Intent"}
+                      </td>
                       <td className="p-4 whitespace-nowrap">
                         <span className={tx.type === "CREDIT" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
                           {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {isSuspense ? (
-                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                            SUSPENSE
+                        {tx.status === "SETTLED" ? (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                            SETTLED
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
-                            SUCCESS
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
+                            PENDING (SUSPENSE)
                           </span>
                         )}
                       </td>
@@ -198,6 +208,8 @@ export default function DashboardOverview() {
           </Button>
         </div>
       </Modal>
+
+      <TransactionModal transaction={selectedTx} onClose={() => setSelectedTx(null)} />
     </PageReveal>
   );
 }

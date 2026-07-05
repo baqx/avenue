@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAppSelector, useAppDispatch } from "@/lib/hooks/redux";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "@/lib/hooks/redux";
 import { logout } from "@/lib/features/authSlice";
+import { useGetProfileQuery } from "@/lib/api/developerApi";
 import {
   House,
   Wallet,
@@ -36,7 +38,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const dispatch = useDispatch();
+  const { data: profile } = useGetProfileQuery();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   useEffect(() => {
@@ -149,11 +152,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <div className="text-sm font-semibold text-[#022c22]">Zenith Pay</div>
-              <div className="text-xs text-[#6a6c6c]">dev@zenithpay.co</div>
+              <div className="text-sm font-semibold text-[#022c22]">{profile?.company_name || 'Developer'}</div>
+              <div className="text-xs text-[#6a6c6c]">{profile?.email || 'Loading...'}</div>
             </div>
             <div className="w-9 h-9 bg-[#022c22] rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">P</span>
+              <span className="text-white font-bold">{profile?.company_name?.[0]?.toUpperCase() || 'D'}</span>
             </div>
           </div>
         </header>

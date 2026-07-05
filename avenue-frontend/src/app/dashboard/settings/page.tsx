@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Key, Link as LinkIcon, User, Plus, Trash, Eye, EyeClosed, PlugsConnected, ArrowClockwise, WarningCircle } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
+import { Key, Link as LinkIcon, User, Plus, Trash, Eye, EyeClosed, PlugsConnected, ArrowClockwise, WarningCircle, Copy, BookOpenText } from "@phosphor-icons/react";
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
 import { 
@@ -38,6 +38,24 @@ export default function SettingsPage() {
   const [newlyCreatedKeys, setNewlyCreatedKeys] = useState<Record<string, string>>({});
 
   const toast = useToast();
+
+  // Prefill forms when data is loaded
+  useEffect(() => {
+    if (profileData) {
+      setProfileForm({ company_name: profileData.company_name || '', email: profileData.email || '' });
+    }
+  }, [profileData]);
+
+  useEffect(() => {
+    if (nombaData) {
+      setNombaForm({
+        account_id: nombaData.account_id || '',
+        client_id: nombaData.client_id || '',
+        client_secret: '', // Don't prefill secrets
+        webhook_signature_key: ''
+      });
+    }
+  }, [nombaData]);
 
   const handleProfileUpdate = async () => {
     try {
@@ -93,9 +111,20 @@ export default function SettingsPage() {
 
   return (
     <PageReveal>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Settings</h1>
-        <p className="text-[#6a6c6c] mt-1">Manage your API keys, Nomba integration, and profile.</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-[#022c22] tracking-tight">Settings</h1>
+          <p className="text-[#6a6c6c] mt-1">Manage your API keys, Nomba integration, and profile.</p>
+        </div>
+        <a 
+          href="https://docs.avenue.dev" 
+          target="_blank" 
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 rounded-lg text-sm font-bold hover:bg-[#dcfce7] transition-colors"
+        >
+          <BookOpenText weight="fill" />
+          Developer Docs
+        </a>
       </div>
 
       <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col mb-8">
@@ -126,7 +155,7 @@ export default function SettingsPage() {
         <div className="p-6">
           {activeTab === "keys" && (
             <div className="space-y-8 max-w-3xl">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-[#022c22]">Developer API Keys</h3>
                   <p className="text-sm text-[#6a6c6c]">Manage your secret keys for API access.</p>
@@ -171,19 +200,33 @@ export default function SettingsPage() {
                             <Trash weight="bold" />
                           </Button>
                         </div>
-                        <div className="relative">
-                          <input 
-                            type={isRevealed ? "text" : "password"}
-                            value={displayValue}
-                            readOnly
-                            className={`w-full h-11 pl-3.5 pr-24 rounded-lg border text-sm outline-none font-mono font-bold ${key.type === 'live' ? 'border-[#10b981]/50 bg-[#f0fdf4] text-[#022c22]' : 'border-[#e4e7e9] bg-[#f7f9fb] text-[#6a6c6c]'}`}
-                          />
-                          <button 
-                            onClick={() => toggleKeyReveal(key.id)}
-                            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-bold bg-white border px-2 py-1 rounded transition-colors ${key.type === 'live' ? 'text-[#059669] border-[#10b981]/30 hover:bg-[#f0fdf4]' : 'text-[#6a6c6c] border-[#e4e7e9] hover:bg-[#f7f9fb]'}`}
+                        <div className="relative flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <input 
+                              type={isRevealed || isNewlyCreated ? "text" : "password"}
+                              value={displayValue}
+                              readOnly
+                              className={`w-full h-11 pl-3.5 pr-24 rounded-lg border text-sm outline-none font-mono font-bold ${key.type === 'live' ? 'border-[#10b981]/50 bg-[#f0fdf4] text-[#022c22]' : 'border-[#e4e7e9] bg-[#f7f9fb] text-[#6a6c6c]'}`}
+                            />
+                            {!isNewlyCreated && (
+                              <button 
+                                onClick={() => toggleKeyReveal(key.id)}
+                                className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-bold bg-white border px-2 py-1 rounded transition-colors ${key.type === 'live' ? 'text-[#059669] border-[#10b981]/30 hover:bg-[#f0fdf4]' : 'text-[#6a6c6c] border-[#e4e7e9] hover:bg-[#f7f9fb]'}`}
+                              >
+                                {isRevealed ? <><EyeClosed weight="bold" /> Hide</> : <><Eye weight="bold" /> Reveal</>}
+                              </button>
+                            )}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            className="h-11 px-3 shrink-0" 
+                            onClick={() => {
+                              navigator.clipboard.writeText(displayValue);
+                              toast.success("Copied", "API key copied to clipboard.");
+                            }}
                           >
-                            {isRevealed ? <><EyeClosed weight="bold" /> Hide</> : <><Eye weight="bold" /> Reveal</>}
-                          </button>
+                            <Copy weight="bold" />
+                          </Button>
                         </div>
                         {isNewlyCreated && (
                           <p className="text-xs text-amber-600 mt-2 font-semibold flex items-center gap-1">
