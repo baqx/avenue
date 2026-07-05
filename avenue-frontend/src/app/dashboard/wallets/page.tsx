@@ -21,7 +21,7 @@ export default function WalletsPage() {
 
   const rawWallets = walletsData?.items || [];
   const filteredWallets = rawWallets.filter(w => 
-    w.account_number.includes(searchQuery) || w.label.toLowerCase().includes(searchQuery.toLowerCase())
+    w.account_number.includes(searchQuery) || (w.label && w.label.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleProvision = async () => {
