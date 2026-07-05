@@ -79,7 +79,7 @@ export default function SuspensePage() {
             </thead>
             <tbody>
               {filteredItems.map((item) => {
-                const confScore = item.raw_payload?.ai_intelligence?.confidence_score || 0;
+                const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
                 return (
                 <tr 
                   key={item.id} 
@@ -132,7 +132,7 @@ export default function SuspensePage() {
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-[#e4e7e9]">
           {filteredItems.map((item) => {
-            const confScore = item.raw_payload?.ai_intelligence?.confidence_score || 0;
+            const confScore = item.raw_payload?.avenue_intelligence?.confidence_score || 0;
             return (
             <div key={item.id} className="p-4 bg-[#fffbeb]/30">
               <div className="flex justify-between items-start mb-3">

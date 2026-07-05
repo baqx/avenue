@@ -83,10 +83,10 @@ export default function DashboardOverview() {
               {recentTxs.length === 0 ? (
                 <tr><td colSpan={4} className="p-4 text-center text-[#6a6c6c]">No recent activity</td></tr>
               ) : recentTxs.map((tx) => {
-                const isSuspense = tx.ai_intelligence?.flags?.includes('suspense_queue');
+                const isSuspense = tx.avenue_intelligence?.flags?.includes('suspense_queue');
                 return (
                   <tr key={tx.id} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors">
-                    <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.ai_intelligence?.suggested_label || "Unknown Intent"}</td>
+                    <td className="p-4 font-medium text-[#022c22] whitespace-nowrap">{tx.avenue_intelligence?.suggested_label || "Unknown Intent"}</td>
                     <td className="p-4 whitespace-nowrap">
                       <span className={tx.type === "CREDIT" ? "text-[#059669] font-semibold" : "text-[#022c22]"}>
                         {tx.type === "CREDIT" ? "+" : "-"}₦{(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
