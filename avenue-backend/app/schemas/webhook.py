@@ -28,6 +28,7 @@ class WebhookLogListResponse(BaseModel):
     limit: int
 
 
+
 class OutboundEventPayload(BaseModel):
     """Schema for enriched outbound events sent to developer apps."""
     event_id: uuid.UUID
