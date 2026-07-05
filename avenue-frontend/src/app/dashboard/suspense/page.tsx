@@ -20,9 +20,10 @@ export default function SuspensePage() {
 
   const rawItems = suspenseData?.items || [];
   const filteredItems = rawItems.filter(i => 
-    i.id.includes(searchQuery) || 
+    (i.nomba_reference && i.nomba_reference.toLowerCase().includes(searchQuery.toLowerCase())) || 
+    i.id.includes(searchQuery) ||
     (i.raw_narration && i.raw_narration.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    i.account_number.includes(searchQuery)
+    (i.account_number && i.account_number.includes(searchQuery))
   );
 
   const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS') => {
@@ -91,7 +92,7 @@ export default function SuspensePage() {
                       className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#fffbeb]/50 transition-colors group"
                     >
                       <td className="p-4 whitespace-nowrap">
-                        <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
+                        <div className="font-mono text-sm text-[#022c22] font-semibold">{item.nomba_reference || item.id.substring(0, 8) + '...'}</div>
                         <div className="text-xs text-[#6a6c6c] mt-1">{new Date(item.created_at).toLocaleDateString()}</div>
                       </td>
                       <td className="p-4 font-bold text-[#b45309] whitespace-nowrap">
@@ -144,7 +145,7 @@ export default function SuspensePage() {
             <div key={item.id} className="p-4 bg-[#fffbeb]/30">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="font-mono text-sm text-[#022c22] font-semibold">{item.id}</div>
+                  <div className="font-mono text-sm text-[#022c22] font-semibold">{item.nomba_reference || item.id.substring(0, 8) + '...'}</div>
                   <div className="text-xs text-[#6a6c6c] mt-0.5">{new Date(item.created_at).toLocaleDateString()}</div>
                 </div>
                 <div className="font-bold text-[#b45309]">₦{(item.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
