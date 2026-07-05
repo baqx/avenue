@@ -17,7 +17,7 @@ export default function TransactionsPage() {
 
   const filteredTx = rawTxs.filter(t => 
     t.id.includes(searchQuery) || 
-    t.raw_narration.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.raw_narration && t.raw_narration.toLowerCase().includes(searchQuery.toLowerCase())) ||
     t.wallet_id.includes(searchQuery)
   );
 
