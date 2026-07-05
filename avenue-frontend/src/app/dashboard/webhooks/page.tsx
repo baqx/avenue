@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, CheckCircle, Warning, PaperPlaneRight, PlugsConnected, ArrowClockwise, CodeBlock } from "@phosphor-icons/react";
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,13 @@ export default function WebhooksPage() {
   const [configureWebhook, { isLoading: isSaving }] = useConfigureWebhookMutation();
   const toast = useToast();
 
-  const [webhookUrl, setWebhookUrl] = useState(configData?.url || "");
+  const [webhookUrl, setWebhookUrl] = useState("");
+
+  useEffect(() => {
+    if (configData?.url) {
+      setWebhookUrl(configData.url);
+    }
+  }, [configData]);
 
   const logs = logsData?.items || [];
 
