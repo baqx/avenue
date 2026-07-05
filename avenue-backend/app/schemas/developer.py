@@ -28,9 +28,9 @@ class ChangePasswordRequest(BaseModel):
 class ApiKeyResponse(BaseModel):
     id: uuid.UUID
     key_prefix: str
-    label: Optional[str]
+    label: Optional[str] = None
     type: str
-    last_used_at: Optional[datetime]
+    last_used_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -46,7 +46,7 @@ class NewApiKeyResponse(BaseModel):
     id: uuid.UUID
     full_key: str
     key_prefix: str
-    label: Optional[str]
+    label: Optional[str] = None
     type: str
     created_at: datetime
 

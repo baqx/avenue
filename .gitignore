@@ -85,6 +85,8 @@ target/
 #TODO file
 TODO.md
 
+usecases.txt
+
 # IPython
 profile_default/
 ipython_config.py

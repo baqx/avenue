@@ -35,14 +35,14 @@ class WalletResponse(BaseModel):
     first_name: str
     last_name: str
     email: str
-    label: Optional[str]
+    label: Optional[str] = None
     account_number: str
     bank_name: str
     account_name: str
     balance: int   # In kobo — frontend divides by 100
     currency: str
     status: str
-    system_prompt: Optional[str]
+    system_prompt: Optional[str] = None
     allow_transfers_out: bool
     created_at: datetime
 

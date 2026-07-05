@@ -31,13 +31,13 @@ class AgentResponse(BaseModel):
     developer_id: uuid.UUID
     name: str
     trigger: str
-    threshold: Optional[int]
+    threshold: Optional[int] = None
     action: str
-    destination_wallet_id: Optional[uuid.UUID]
-    sweep_amount: Optional[int]
+    destination_wallet_id: Optional[uuid.UUID] = None
+    sweep_amount: Optional[int] = None
     is_active: bool
     trigger_count: int
-    last_triggered_at: Optional[datetime]
+    last_triggered_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -50,7 +50,7 @@ class AgentLogResponse(BaseModel):
     trigger_event: str
     action_taken: str
     result: str
-    error_message: Optional[str]
+    error_message: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

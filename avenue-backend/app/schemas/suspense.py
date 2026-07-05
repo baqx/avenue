@@ -10,14 +10,14 @@ class SuspenseItemResponse(BaseModel):
     developer_id: uuid.UUID
     account_number: str
     amount: int  # In kobo
-    sender_name: Optional[str]
-    raw_narration: Optional[str]
-    nomba_reference: Optional[str]
+    sender_name: Optional[str] = None
+    raw_narration: Optional[str] = None
+    nomba_reference: Optional[str] = None
     reason: str
     status: str
     raw_payload: dict
-    resolved_at: Optional[datetime]
-    resolution_note: Optional[str]
+    resolved_at: Optional[datetime] = None
+    resolution_note: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
