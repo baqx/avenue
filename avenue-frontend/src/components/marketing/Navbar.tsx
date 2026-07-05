@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Features", href: "/features" },
+  { label: "Use Cases", href: "/use-cases" },
   { label: "Docs", href: "https://avenue.mintlify.app", external: true },
 ];
 
