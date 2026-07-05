@@ -23,14 +23,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Avenue — Intelligent Wallet Infrastructure",
     description: "Smart wallet API with AI reconciliation, account agents, and enriched webhooks.",
-    url: "https://avenue.so",
+    url: "https://avenue-cloud.vercel.app",
     siteName: "Avenue",
     type: "website",
+    images: [{ url: "https://avenue-cloud.vercel.app/banner.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Avenue — Intelligent Wallet Infrastructure",
     description: "Smart wallet API with AI reconciliation, account agents, and enriched webhooks.",
+    images: ["https://avenue-cloud.vercel.app/banner.png"],
   },
 };
 

@@ -1,10 +1,10 @@
 {
   "name": "Avenue",
   "logo": {
-    "light": "/logo/avenue-light.svg",
-    "dark": "/logo/avenue-dark.svg"
+    "light": "https://avenue-cloud.vercel.app/logo/logo.png",
+    "dark": "https://avenue-cloud.vercel.app/logo/logo-inverted.png"
   },
-  "favicon": "/favicon.ico",
+  "favicon": "https://avenue-cloud.vercel.app/favicon.ico",
   "colors": {
     "primary": "#082938",
     "light": "#6cc7ff",
@@ -104,8 +104,12 @@
       ]
     }
   ],
+  "seo": {
+    "og:image": "https://avenue-cloud.vercel.app/banner.png",
+    "twitter:image": "https://avenue-cloud.vercel.app/banner.png"
+  },
   "footerSocials": {
-    "twitter": "https://twitter.com/avenueso",
+    "twitter": "https://x.com/avenue",
     "github": "https://github.com/baqx/avenue"
   },
   "api": {

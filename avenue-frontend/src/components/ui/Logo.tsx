@@ -13,16 +13,19 @@ const sizes = {
 };
 
 export function Logo({ className, variant = "dark", size = "md" }: LogoProps) {
-  const colors = {
-    dark:   { text: "text-[#022c22]",  dot: "bg-[#10b981]" },
-    light:  { text: "text-white",       dot: "bg-[#10b981]" },
-    accent: { text: "text-[#10b981]",  dot: "bg-[#022c22]" },
-  }[variant];
+  // Since we are using an image logo now, the variant color overrides might not apply perfectly 
+  // but we will apply the size classes and a potential brightness/invert for dark mode if needed.
+  // For now, we will just use the logo.png.
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5 font-semibold tracking-tight select-none", sizes[size].text, colors.text, className)}>
-      <span className={cn("rounded-full", sizes[size].dot, colors.dot)} />
-      avenue
-    </span>
+    <img 
+      src="/logo.png" 
+      alt="Avenue Logo" 
+      className={cn("select-none object-contain w-auto max-w-full", {
+        "h-6": size === "sm",
+        "h-8": size === "md",
+        "h-12": size === "lg"
+      }, className)} 
+    />
   );
 }
