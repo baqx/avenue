@@ -44,12 +44,15 @@ curl -X POST https://johnajayi-avenue.hf.space/v1/wallets \
 **Response:**
 ```json
 {
-  "id": "wal_abc123",
-  "nuban": "0123456789",
-  "bank_name": "Nomba Microfinance Bank",
-  "status": "ACTIVE",
-  "customer_reference": "user_182",
-  "balance_kobo": 0
+  "success": true,
+  "data": {
+    "id": "wal_abc123",
+    "nuban": "0123456789",
+    "bank_name": "Nomba Microfinance Bank",
+    "status": "ACTIVE",
+    "customer_reference": "user_182",
+    "balance_kobo": 0
+  }
 }
 ```
 
@@ -60,7 +63,7 @@ Share the `nuban` with your user. They can now receive money at this account num
 Tell Avenue where to send enriched events after processing:
 
 ```bash
-curl -X PUT https://johnajayi-avenue.hf.space/v1/developers/webhook \
+curl -X POST https://johnajayi-avenue.hf.space/v1/developers/me/outbound-webhook \
   -H "x-api-key: ave_live_xxxx" \
   -H "Content-Type: application/json" \
   -d '{ "url": "https://yourapp.io/avenue-events" }'

@@ -61,13 +61,6 @@
       "group": "API Reference",
       "pages": [
         {
-          "group": "Auth",
-          "pages": [
-            "api-reference/auth/signup",
-            "api-reference/auth/login"
-          ]
-        },
-        {
           "group": "Wallets",
           "pages": [
             "api-reference/wallets/create",

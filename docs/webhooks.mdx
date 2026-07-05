@@ -32,8 +32,9 @@ Paste this into your Nomba dashboard. Every payment event Nomba fires will be re
 Register your outbound URL via the API or dashboard:
 
 ```bash
-curl -X PUT https://johnajayi-avenue.hf.space/v1/developers/webhook \
+curl -X POST https://johnajayi-avenue.hf.space/v1/developers/me/outbound-webhook \
   -H "x-api-key: ave_live_xxxx" \
+  -H "Content-Type: application/json" \
   -d '{ "url": "https://yourapp.io/avenue-events" }'
 ```
 

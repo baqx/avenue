@@ -28,7 +28,8 @@
               "concepts/the-ledger",
               "concepts/ai-reconciliation",
               "concepts/agents",
-              "concepts/suspense-engine"
+              "concepts/suspense-engine",
+              "concepts/agent-native-infrastructure"
             ]
           },
           {
@@ -46,13 +47,6 @@
           {
             "group": "API Reference",
             "pages": [
-              {
-                "group": "Auth",
-                "pages": [
-                  "api-reference/auth/signup",
-                  "api-reference/auth/login"
-                ]
-              },
               {
                 "group": "Wallets",
                 "pages": [
