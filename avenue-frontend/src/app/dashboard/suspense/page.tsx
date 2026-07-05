@@ -63,6 +63,16 @@ export default function SuspensePage() {
         </div>
       </div>
 
+      {rawItems.length > 0 && (
+        <div className="mb-6 bg-gradient-to-r from-[#fffbeb] to-[#fef3c7] border border-[#fcd34d] rounded-xl p-4 flex items-start gap-3 shadow-sm">
+          <ShieldWarning className="w-6 h-6 text-[#b45309] shrink-0 mt-0.5" weight="duotone" />
+          <div>
+            <h3 className="font-bold text-[#92400e]">Attention Required</h3>
+            <p className="text-[#b45309] text-sm mt-0.5">There are transactions in the suspense queue that require manual resolution. The AI was unable to automatically reconcile them.</p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm overflow-hidden flex flex-col">
         {/* Toolbar */}
         <div className="p-4 border-b border-[#e4e7e9] flex items-center bg-[#f7f9fb]">
@@ -116,7 +126,7 @@ export default function SuspensePage() {
                       <td className="p-4 text-right whitespace-nowrap">
                         <Button 
                           onClick={() => setSelectedItem(item)}
-                          className="h-8 px-3 bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-none"
+                          className="h-8 px-4 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_20px_rgba(245,158,11,0.6)] transition-all border-none"
                         >
                           Resolve
                         </Button>

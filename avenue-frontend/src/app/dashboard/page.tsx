@@ -48,32 +48,47 @@ export default function DashboardOverview() {
         ) : (
           <>
             {/* Card 1: Balance */}
-            <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-              <div className="flex items-center gap-2 text-[#6a6c6c]">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#022c22] to-[#064e3b] p-6 shadow-md flex flex-col justify-between h-full min-h-[150px] border border-[#022c22]">
+              {/* Doodle Pattern */}
+              <div 
+                className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}
+              />
+              <div className="relative z-10 flex items-center gap-2 text-[#a7f3d0]">
                 <Wallet className="w-5 h-5" />
                 <span className="font-semibold text-sm">Total Ledger Balance</span>
               </div>
-              <div className="text-3xl font-bold text-[#022c22] mt-4">
+              <div className="relative z-10 text-3xl font-bold text-white mt-4 drop-shadow-sm">
                 ₦{((stats?.total_volume_kobo || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
 
             {/* Card 2: Wallets */}
-            <div className="bg-white rounded-xl border border-[#e4e7e9] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-              <div className="flex items-center gap-2 text-[#6a6c6c]">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-white to-[#f8fafc] p-6 shadow-sm flex flex-col justify-between h-full min-h-[150px] border border-[#e2e8f0]">
+              {/* Doodle Pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%230f172a' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")` }}
+              />
+              <div className="relative z-10 flex items-center gap-2 text-[#64748b]">
                 <ArrowsLeftRight className="w-5 h-5" />
                 <span className="font-semibold text-sm">Active Wallets</span>
               </div>
-              <div className="text-3xl font-bold text-[#022c22] mt-4">{stats?.active_wallets || 0}</div>
+              <div className="relative z-10 text-3xl font-bold text-[#0f172a] mt-4">{stats?.active_wallets || 0}</div>
             </div>
 
             {/* Card 3: Suspense */}
-            <div className="bg-[#fffbeb] rounded-xl border border-[#fcd34d] p-6 shadow-sm flex flex-col justify-between h-full min-h-[140px]">
-              <div className="flex items-center gap-2 text-[#b45309]">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#fffbeb] to-[#fef3c7] p-6 shadow-sm flex flex-col justify-between h-full min-h-[150px] border border-[#fcd34d]">
+              {/* Doodle Pattern */}
+              <div 
+                className="absolute inset-0 opacity-10 pointer-events-none mix-blend-multiply"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23d97706' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}
+              />
+              <div className="relative z-10 flex items-center gap-2 text-[#b45309]">
                 <ShieldWarning className="w-5 h-5" />
                 <span className="font-semibold text-sm">Action Required (Suspense)</span>
               </div>
-              <div className="text-3xl font-bold text-[#b45309] mt-4">{stats?.pending_suspense_count || 0} items</div>
+              <div className="relative z-10 text-3xl font-bold text-[#92400e] mt-4 drop-shadow-sm">{stats?.pending_suspense_count || 0} items</div>
             </div>
           </>
         )}

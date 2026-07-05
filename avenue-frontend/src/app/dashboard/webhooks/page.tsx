@@ -109,7 +109,11 @@ export default function WebhooksPage() {
                     <h3 className="text-lg font-bold text-[#022c22] mb-1">Outbound Webhook (To Your App)</h3>
                     <p className="text-sm text-[#6a6c6c]">Avenue will send enriched, processed events to this URL.</p>
                   </div>
-                  <div className="bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1.5">
+                  <div className="bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#059669]"></span>
+                    </span>
                     <PlugsConnected weight="bold" /> ACTIVE
                   </div>
                 </div>
@@ -250,8 +254,16 @@ export default function WebhooksPage() {
 
             <div className="space-y-2">
               <div className="text-xs font-semibold text-[#6a6c6c] uppercase tracking-wider">Payload Snippet</div>
-              <div className="bg-[#022c22] rounded-lg p-4 font-mono text-xs text-[#10b981] overflow-x-auto">
-                <pre>{JSON.stringify(selectedLog.payload, null, 2)}</pre>
+              <div className="bg-[#0f172a] rounded-lg border border-[#1e293b] shadow-inner overflow-hidden">
+                <div className="bg-[#1e293b] px-4 py-2 flex items-center gap-1.5 border-b border-[#334155]">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></div>
+                  <div className="ml-2 font-mono text-[10px] text-[#94a3b8]">bash — POST /webhooks</div>
+                </div>
+                <div className="p-4 font-mono text-xs text-[#a7f3d0] overflow-x-auto">
+                  <pre className="opacity-90">{JSON.stringify(selectedLog.payload, null, 2)}</pre>
+                </div>
               </div>
             </div>
 

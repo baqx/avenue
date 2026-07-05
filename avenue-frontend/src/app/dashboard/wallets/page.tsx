@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, MagnifyingGlass, Wallet, LockKey, LockKeyOpen, Trash } from "@phosphor-icons/react";
+import { Plus, MagnifyingGlass, Wallet, LockKey, LockKeyOpen, Trash, Copy } from "@phosphor-icons/react";
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -83,22 +83,37 @@ export default function WalletsPage() {
                 </thead>
                 <tbody>
                   {filteredWallets.map((wallet) => (
-                    <tr key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors group cursor-pointer">
-                      <td className="p-4 font-mono font-medium text-[#022c22] whitespace-nowrap">{wallet.account_number}</td>
+                    <tr key={wallet.id} onClick={() => router.push(`/dashboard/wallets/${wallet.id}`)} className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4] hover:-translate-y-[1px] hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] transition-all duration-200 group cursor-pointer relative z-0 hover:z-10">
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-medium text-[#022c22]">{wallet.account_number}</span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(wallet.account_number); toast.success("Copied", "NUBAN copied to clipboard."); }}
+                            className="text-[#bbbdbd] hover:text-[#022c22] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            title="Copy NUBAN"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                       <td className="p-4 text-[#022c22] whitespace-nowrap font-medium">{wallet.label}</td>
                       <td className="p-4 whitespace-nowrap">
                         {wallet.status === "ACTIVE" && (
-                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30 uppercase tracking-wider">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#059669]"></span>
+                            </span>
                             ACTIVE
                           </span>
                         )}
                         {wallet.status === "FROZEN" && (
-                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 uppercase tracking-wider">
                             FROZEN
                           </span>
                         )}
                         {wallet.status === "CLOSED" && (
-                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wider">
                             CLOSED
                           </span>
                         )}
@@ -109,7 +124,13 @@ export default function WalletsPage() {
                   ))}
                   {filteredWallets.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No wallets found.</td>
+                      <td colSpan={5} className="p-16 text-center">
+                        <div className="flex flex-col items-center justify-center text-[#6a6c6c]">
+                          <Wallet className="w-12 h-12 mb-4 text-[#bbbdbd]" weight="duotone" />
+                          <p className="text-lg font-semibold text-[#022c22] mb-1">No wallets found</p>
+                          <p className="text-sm">Get started by provisioning a new NUBAN.</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>

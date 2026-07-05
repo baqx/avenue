@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, MagnifyingGlass, GitFork, ToggleLeft, ToggleRight, Lightning } from "@phosphor-icons/react";
+import { Plus, MagnifyingGlass, GitFork, ToggleLeft, ToggleRight, Lightning, Wallet } from "@phosphor-icons/react";
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -124,106 +124,77 @@ export default function AgentsPage() {
         {isAgentsLoading ? (
           <TableShimmer rows={4} />
         ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-white border-b border-[#e4e7e9]">
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Agent Name</th>
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Trigger Condition</th>
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Action</th>
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap">Status</th>
-                    <th className="p-4 font-semibold text-[#6a6c6c] text-sm whitespace-nowrap text-right">Last Fired</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAgents.map((agent) => (
-                    <tr 
-                      key={agent.id} 
-                      onClick={() => setSelectedAgent(agent)}
-                      className="border-b border-[#e4e7e9] last:border-0 hover:bg-[#f0fdf4]/50 transition-colors cursor-pointer group"
-                    >
-                      <td className="p-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#f0fdf4] text-[#059669] flex items-center justify-center shrink-0">
-                            <GitFork weight="bold" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-[#022c22]">{agent.name}</div>
-                            <div className="text-xs text-[#6a6c6c] font-mono mt-0.5">Wallet: {agent.wallet_id.substring(0, 8)}...</div>
-                          </div>
+          <div className="bg-[#f7f9fb] p-4 sm:p-6 min-h-[400px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {filteredAgents.map((agent) => (
+                <div 
+                  key={agent.id} 
+                  onClick={() => setSelectedAgent(agent)}
+                  className="bg-white rounded-xl border border-[#e4e7e9] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col relative group"
+                >
+                  <div className="p-5 border-b border-[#e4e7e9] flex justify-between items-start bg-gradient-to-br from-white to-[#f8fafc]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-[#e4e7e9] text-[#059669] flex items-center justify-center shrink-0">
+                        <GitFork weight="duotone" className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#022c22]">{agent.name}</div>
+                        <div className="text-[11px] text-[#6a6c6c] font-mono mt-1 flex items-center gap-1">
+                          <Wallet className="w-3 h-3" />
+                          {agent.wallet_id.substring(0, 8)}...
                         </div>
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        <span className="font-mono text-xs bg-[#f7f9fb] text-[#022c22] border border-[#e4e7e9] px-2 py-1 rounded">
-                          {agent.trigger} {agent.threshold ? `> ${agent.threshold}` : ''}
-                        </span>
-                      </td>
-                      <td className="p-4 font-semibold text-[#022c22] whitespace-nowrap text-sm">
-                        {agent.action}
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        {agent.is_active ? (
-                          <ToggleRight weight="fill" className="w-8 h-8 text-[#10b981]" onClick={(e) => handleToggle(agent, e)} />
-                        ) : (
-                          <ToggleLeft weight="fill" className="w-8 h-8 text-[#bbbdbd]" onClick={(e) => handleToggle(agent, e)} />
-                        )}
-                      </td>
-                      <td className="p-4 text-right text-sm text-[#6a6c6c] whitespace-nowrap">{agent.last_triggered_at ? new Date(agent.last_triggered_at).toLocaleString() : "Never"}</td>
-                    </tr>
-                  ))}
-                  {filteredAgents.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-[#6a6c6c]">No agents found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {agent.is_active && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#f0fdf4] text-[#059669] rounded border border-[#10b981]/30 text-[10px] font-bold uppercase tracking-wide">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#059669]"></span>
+                          </span>
+                          Active
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="p-5 flex-1 flex flex-col justify-center">
+                    <div className="bg-[#f7f9fb] rounded-lg p-3 border border-[#e4e7e9] font-mono text-sm mb-3 text-[#022c22]">
+                      <span className="text-[#64748b]">IF</span> {agent.trigger} {agent.threshold ? `> ₦${agent.threshold}` : ''}
+                    </div>
+                    <div className="bg-[#f7f9fb] rounded-lg p-3 border border-[#e4e7e9] font-mono text-sm text-[#022c22]">
+                      <span className="text-[#10b981]">THEN</span> {agent.action}
+                    </div>
+                  </div>
 
-        {/* Mobile Cards */}
-        <div className="md:hidden divide-y divide-[#e4e7e9]">
-          {filteredAgents.map((agent) => (
-            <div 
-              key={agent.id} 
-              onClick={() => setSelectedAgent(agent)}
-              className="p-4 hover:bg-[#f0fdf4]/50 transition-colors active:bg-[#f0fdf4] cursor-pointer"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#f0fdf4] text-[#059669] flex items-center justify-center shrink-0">
-                    <GitFork weight="bold" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-[#022c22]">{agent.name}</div>
-                    <div className="text-[10px] font-mono text-[#6a6c6c] mt-0.5">Wallet: {agent.wallet_id.substring(0, 8)}...</div>
+                  <div className="p-4 border-t border-[#e4e7e9] bg-[#f8fafc] flex justify-between items-center text-xs text-[#6a6c6c]">
+                    <span>{agent.last_triggered_at ? `Last fired: ${new Date(agent.last_triggered_at).toLocaleDateString()}` : "Never fired"}</span>
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); handleToggle(agent); }}
+                      className="hover:scale-110 transition-transform"
+                    >
+                      {agent.is_active ? (
+                        <ToggleRight weight="fill" className="w-8 h-8 text-[#10b981]" />
+                      ) : (
+                        <ToggleLeft weight="fill" className="w-8 h-8 text-[#bbbdbd]" />
+                      )}
+                    </div>
                   </div>
                 </div>
-                {agent.is_active ? (
-                  <ToggleRight weight="fill" className="w-7 h-7 text-[#10b981]" onClick={(e) => handleToggle(agent, e)} />
-                ) : (
-                  <ToggleLeft weight="fill" className="w-7 h-7 text-[#bbbdbd]" onClick={(e) => handleToggle(agent, e)} />
-                )}
-              </div>
-              <div className="flex flex-col gap-2 mt-4 text-xs">
-                <div className="flex justify-between border-b border-dashed border-[#e4e7e9] pb-1">
-                  <span className="text-[#6a6c6c]">Trigger:</span>
-                  <span className="font-mono text-[#022c22]">{agent.trigger} {agent.threshold ? `> ${agent.threshold}` : ''}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#6a6c6c]">Action:</span>
-                  <span className="font-semibold text-[#022c22]">{agent.action}</span>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-          {filteredAgents.length === 0 && (
-            <div className="p-8 text-center text-[#6a6c6c]">No agents found.</div>
-          )}
-        </div>
+
+            {filteredAgents.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-[#6a6c6c]">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-[#e4e7e9] flex items-center justify-center mb-4">
+                  <GitFork weight="duotone" className="w-8 h-8 text-[#bbbdbd]" />
+                </div>
+                <p className="text-lg font-semibold text-[#022c22] mb-1">No agents configured</p>
+                <p className="text-sm">Create an agent to automate your wallet operations.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Agent Detail Modal */}

@@ -12,7 +12,7 @@ export function SnapScroll({ children, className }: { children: React.ReactNode,
 
   return (
     <div className={cn(
-      "flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-6 px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+      "flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
       "md:grid md:grid-cols-3 md:gap-6 md:pb-0 md:mx-0 md:px-0 md:overflow-visible md:snap-none md:flex-none",
       className
     )}>
