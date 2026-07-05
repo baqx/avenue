@@ -14,14 +14,32 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 async def get_current_developer_via_api_key(
     api_key: str = Security(api_key_header),
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> Developer:
-    """Authenticate via x-api-key header (used for all public API calls)."""
-    if not api_key:
+    """Authenticate via x-api-key header OR JWT token (used for public API and dashboard calls)."""
+    if not api_key and not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing API key. Provide x-api-key header.",
+            detail="Missing API key. Provide x-api-key header or Bearer token.",
         )
+        
+    if credentials and not api_key:
+        developer_id = decode_access_token(credentials.credentials)
+        if not developer_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token.",
+            )
+        result = await db.execute(select(Developer).where(Developer.id == developer_id))
+        developer = result.scalar_one_or_none()
+        if not developer or not developer.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Developer account is not verified or does not exist.",
+            )
+        return developer
+
     key_hash = hash_api_key(api_key)
     result = await db.execute(
         select(ApiKey)
