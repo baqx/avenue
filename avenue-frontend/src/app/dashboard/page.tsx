@@ -37,8 +37,7 @@ export default function DashboardOverview() {
         </Button>
       </div>
 
-      {/* Metrics via SnapScroll */}
-      <SnapScroll className="mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {isStatsLoading ? (
           <>
             <CardShimmer />
@@ -92,7 +91,7 @@ export default function DashboardOverview() {
             </div>
           </>
         )}
-      </SnapScroll>
+      </div>
 
       {/* Recent Activity Table */}
       {/* Recent Activity Table */}
