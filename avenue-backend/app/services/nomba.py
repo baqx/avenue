@@ -12,6 +12,7 @@ import uuid
 import httpx
 from app.core.config import settings
 from app.services.encryption import decrypt
+from app.core.currency import kobo_to_ngn_str
 
 
 class NombaAPIError(Exception):
@@ -137,7 +138,7 @@ async def initiate_transfer(
     merchantTxRef is the idempotency key (required by Nomba).
     """
     token = await _get_nomba_token(account_id, client_id, encrypted_secret)
-    amount_ngn = amount_kobo / 100
+    amount_ngn_str = kobo_to_ngn_str(amount_kobo)
 
     # Generate a unique merchantTxRef if not provided
     if not merchant_tx_ref:
@@ -152,7 +153,7 @@ async def initiate_transfer(
                 "accountId": account_id,
             },
             json={
-                "amount": amount_ngn,
+                "amount": float(amount_ngn_str),
                 "accountNumber": destination_account_number,
                 "bankCode": destination_bank_code,
                 "accountName": destination_account_name,

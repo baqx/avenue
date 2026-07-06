@@ -43,6 +43,7 @@ from app.core.errors import BadRequestError
 from app.core.security import verify_nomba_signature
 from app.db.models.nomba_config import NombaConfig
 from app.db.session import get_db
+from app.core.currency import ngn_to_kobo
 
 router = APIRouter()
 
@@ -90,8 +91,7 @@ async def receive_nomba_webhook(
     # Extract fields from Nomba's actual webhook structure
     nomba_reference = transaction.get("transactionId")
     account_number = transaction.get("aliasAccountNumber")
-    amount_ngn = float(transaction.get("transactionAmount", 0))
-    amount_kobo = int(amount_ngn * 100)  # Nomba sends NGN, we store kobo
+    amount_kobo = ngn_to_kobo(transaction.get("transactionAmount", 0))  # Nomba sends NGN, we store kobo
     sender_name = customer.get("senderName")
     sender_account = customer.get("accountNumber")
     raw_narration = transaction.get("narration", "")

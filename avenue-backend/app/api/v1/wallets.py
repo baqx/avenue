@@ -25,6 +25,7 @@ from app.schemas.wallet import (
     WalletReportResponse,
 )
 from app.services import ledger as ledger_service
+from app.services.agent_runner import evaluate_agents
 from app.services.nomba import create_virtual_account, initiate_transfer
 from app.schemas.base import StandardResponse
 from typing import Any
@@ -269,6 +270,11 @@ async def transfer_funds(
             db=db,
         )
         await db.commit()
+        
+        # Evaluate agents on destination wallet
+        await evaluate_agents(wallet=dest_wallet, new_credit_amount=body.amount, db=db)
+        await db.commit()
+        
         return StandardResponse(data=TransferResponse(
             status="SUCCESS",
             transaction_id=str(debit_entry.id),

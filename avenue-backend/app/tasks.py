@@ -14,6 +14,7 @@ from app.services.ledger import record_credit, get_wallet_balance
 from app.services.suspense import create_suspense_item
 from app.services.webhook_dispatcher import dispatch_event
 from app.services.agent_runner import evaluate_agents
+from app.core.currency import ngn_to_kobo
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,7 @@ async def process_inbound_webhook_task(
 
     nomba_reference = transaction.get("transactionId")
     account_number = transaction.get("aliasAccountNumber")
-    amount_ngn = float(transaction.get("transactionAmount", 0))
-    amount_kobo = int(amount_ngn * 100)
+    amount_kobo = ngn_to_kobo(transaction.get("transactionAmount", 0))
     sender_name = customer.get("senderName")
     sender_account = customer.get("accountNumber")
     raw_narration = transaction.get("narration", "")

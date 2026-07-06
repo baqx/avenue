@@ -11,6 +11,7 @@ from app.db.models.agent import Agent, AgentLog
 from app.db.models.developer import Developer
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
+from app.services.agent_runner import evaluate_agents
 from app.schemas.agent import (
     AgentListResponse, AgentLogResponse, AgentResponse,
     CreateAgentRequest, ToggleAgentRequest, UpdateAgentRequest,
@@ -34,6 +35,11 @@ async def create_agent(
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
+    
+    # Immediately evaluate in case the wallet already meets the criteria
+    await evaluate_agents(wallet=wallet, new_credit_amount=0, db=db)
+    await db.commit()
+    
     return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
@@ -87,6 +93,12 @@ async def toggle_agent(
     agent.is_active = body.is_active
     await db.commit()
     await db.refresh(agent)
+    
+    if agent.is_active:
+        wallet = await _get_wallet_or_404(wallet_id, developer, db)
+        await evaluate_agents(wallet=wallet, new_credit_amount=0, db=db)
+        await db.commit()
+        
     return StandardResponse(data=AgentResponse.model_validate(agent))
 
 
