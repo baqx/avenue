@@ -2,7 +2,7 @@
 Wallet API routes — full CRUD + freeze/close/unfreeze.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
@@ -22,6 +22,7 @@ from app.schemas.wallet import (
     WalletResponse,
     TransferRequest,
     TransferResponse,
+    WalletReportResponse,
 )
 from app.services import ledger as ledger_service
 from app.services.nomba import create_virtual_account, initiate_transfer
@@ -339,6 +340,30 @@ async def transfer_funds(
         )
         await db.commit()
         raise BadRequestError(f"External transfer failed: {str(e)}")
+
+
+@router.get("/{wallet_id}/reports", response_model=StandardResponse[WalletReportResponse])
+async def get_wallet_reports(
+    wallet_id: uuid.UUID,
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+    developer: Developer = CurrentDeveloper,
+    db: AsyncSession = Depends(get_db),
+):
+    wallet = await _get_wallet_or_404(wallet_id, developer, db)
+    
+    if not end_date:
+        end_date = datetime.now(timezone.utc)
+    if not start_date:
+        start_date = end_date - timedelta(days=30)
+        
+    report = await ledger_service.generate_wallet_report(
+        wallet_id=wallet.id,
+        start_date=start_date,
+        end_date=end_date,
+        db=db,
+    )
+    return StandardResponse(data=report)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
