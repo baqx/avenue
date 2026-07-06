@@ -44,6 +44,9 @@ from app.core.security import verify_nomba_signature
 from app.db.models.nomba_config import NombaConfig
 from app.db.session import get_db
 from app.core.currency import ngn_to_kobo
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -69,10 +72,13 @@ async def receive_nomba_webhook(
     9. Dispatch enriched webhook to developer
     """
 
+    logger.info(f"Received Nomba webhook for developer {developer_id}: {payload}")
+
     # ── Step 1: Validate HMAC signature ────────────────────────────────────
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer_id))
     nomba_config = result.scalar_one_or_none()
     if not nomba_config:
+        logger.warning(f"Webhook rejected: Unknown developer {developer_id}")
         return {"status": "rejected", "reason": "Unknown developer"}
 
     nomba_signature = request.headers.get("nomba-signature", "")
@@ -80,7 +86,10 @@ async def receive_nomba_webhook(
 
     if nomba_signature and nomba_config.webhook_signature_key:
         if not verify_nomba_signature(payload, nomba_signature, nomba_config.webhook_signature_key, nomba_timestamp):
+            logger.warning(f"Webhook rejected: Invalid signature for developer {developer_id}")
             return {"status": "rejected", "reason": "Invalid signature"}
+    else:
+        logger.info(f"No signature key configured for developer {developer_id}, bypassing signature check.")
 
     # ── Step 2: Parse Nomba payload (actual structure) ─────────────────────
     event_type = payload.get("event_type", "")
@@ -98,11 +107,13 @@ async def receive_nomba_webhook(
 
     if event_type == "payment_success":
         if not nomba_reference or not account_number:
+            logger.warning(f"Webhook rejected: Missing required fields in payment_success payload")
             return {"status": "rejected", "reason": "Missing required fields"}
     elif event_type in ("payout_success", "payout_failed", "payout_refund"):
         # Allow transfer webhooks through. The background task will parse them.
         pass
     else:
+        logger.info(f"Webhook acknowledged but not processed: Event type '{event_type}'")
         return {"status": "ok", "note": f"Event type '{event_type}' acknowledged but not processed"}
 
     # ── Step 3: Enqueue background task ────────────────────────────────────
