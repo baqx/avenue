@@ -22,7 +22,7 @@ class Wallet(Base):
     label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Nomba virtual account details
-    nomba_account_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    nomba_account_id: Mapped[str] = mapped_column(String(255), nullable=False)
     account_number: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
     account_name: Mapped[str] = mapped_column(String(255), nullable=False)
