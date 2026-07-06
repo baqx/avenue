@@ -7,10 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.agent import Agent, AgentLog
-from app.db.models.nomba_config import NombaConfig
+from app.db.models.nomba_config import NombaConfig, OutboundWebhook
 from app.db.models.wallet import Wallet
 from app.services import ledger as ledger_service
 from app.services.nomba import initiate_transfer
+from app.services.webhook_dispatcher import dispatch_event
 
 
 async def evaluate_agents(
@@ -142,6 +143,30 @@ async def _execute_action(
             
             debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
             await db.flush()
+        else:
+            raise ValueError("No destination wallet or external account specified for sweep action.")
     elif agent.action == "LOCK_WALLET":
         wallet.status = "FROZEN"
         await db.flush()
+    elif agent.action == "WEBHOOK_NOTIFY":
+        outbound_result = await db.execute(
+            select(OutboundWebhook).where(OutboundWebhook.developer_id == wallet.developer_id)
+        )
+        outbound_webhook = outbound_result.scalar_one_or_none()
+        if not outbound_webhook or not outbound_webhook.is_active:
+            raise ValueError("No active outbound webhook configured for developer.")
+            
+        await dispatch_event(
+            developer_id=wallet.developer_id,
+            event_type="agent.triggered",
+            data={
+                "wallet_id": str(wallet.id),
+                "agent_id": str(agent.id),
+                "agent_name": agent.name,
+                "action": agent.action,
+                "current_balance": current_balance,
+            },
+            webhook_url=outbound_webhook.url,
+            signing_secret=outbound_webhook.signing_secret,
+            db=db,
+        )
