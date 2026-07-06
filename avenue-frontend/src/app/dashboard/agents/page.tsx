@@ -47,13 +47,13 @@ export default function AgentsPage() {
         action: formData.action
       };
       if (formData.trigger === 'BALANCE_ABOVE' || formData.trigger === 'BALANCE_BELOW') {
-        payload.threshold = Number(formData.threshold);
+        payload.threshold = Number(formData.threshold)*100;
       }
       if (formData.action === 'SWEEP_FULL' || formData.action === 'PARTIAL_SWEEP') {
         payload.destination_wallet_id = formData.destination_wallet_id;
       }
       if (formData.action === 'PARTIAL_SWEEP') {
-        payload.sweep_amount = Number(formData.sweep_amount);
+        payload.sweep_amount = Number(formData.sweep_amount)*100;
       }
       
       await createAgent(payload).unwrap();
@@ -303,7 +303,7 @@ export default function AgentsPage() {
 
           {(formData.trigger === 'BALANCE_ABOVE' || formData.trigger === 'BALANCE_BELOW') && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[#022c22]">Threshold Amount *</label>
+              <label className="text-sm font-medium text-[#022c22]">Threshold Amount(N)*</label>
               <input 
                 type="number"
                 value={formData.threshold}
@@ -346,7 +346,7 @@ export default function AgentsPage() {
 
           {formData.action === 'PARTIAL_SWEEP' && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[#022c22]">Sweep Amount *</label>
+              <label className="text-sm font-medium text-[#022c22]">Sweep Amount(N) *</label>
               <input 
                 type="number"
                 value={formData.sweep_amount}
