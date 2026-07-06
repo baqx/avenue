@@ -3,6 +3,8 @@ Wallet API routes — full CRUD + freeze/close/unfreeze.
 """
 import uuid
 from datetime import datetime, timezone, timedelta
+import re
+
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
@@ -50,7 +52,10 @@ async def create_wallet(
     if not nomba_config:
         raise BadRequestError("Please configure your Nomba credentials in Settings before creating wallets.")
 
-    account_name = f"{developer.company_name} / {body.first_name} {body.last_name}"
+    raw_name = f"{developer.company_name} {body.first_name} {body.last_name}"
+    # Nomba rejects special characters in the accountName field
+    clean_name = re.sub(r'[^a-zA-Z0-9 ]', '', raw_name)
+    account_name = re.sub(r'\s+', ' ', clean_name).strip()
 
     # Generate a unique account reference for Nomba (16-64 chars required)
     import uuid as uuid_mod
