@@ -25,6 +25,31 @@ export interface WalletListResponse {
   limit: number;
 }
 
+export interface CategoryInsight {
+  category: string;
+  total_amount: number;
+  transaction_count: number;
+}
+
+export interface DailyFlow {
+  date: string;
+  total_inflow: number;
+  total_outflow: number;
+}
+
+export interface WalletReport {
+  wallet_id: string;
+  start_date: string;
+  end_date: string;
+  total_inflow: number;
+  total_outflow: number;
+  net_flow: number;
+  transaction_count: number;
+  flagged_transactions_count: number;
+  categories: CategoryInsight[];
+  daily_flows: DailyFlow[];
+}
+
 export interface CreateWalletRequest {
   customer_reference: string;
   first_name: string;
@@ -78,6 +103,10 @@ export const walletsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Wallet', id }],
     }),
+    getWalletReport: builder.query<WalletReport, string>({
+      query: (id) => `/wallets/${id}/reports`,
+      providesTags: (result, error, id) => [{ type: 'Wallet', id }],
+    }),
   }),
 });
 
@@ -88,4 +117,5 @@ export const {
   useCloseWalletMutation,
   useFreezeWalletMutation,
   useUnfreezeWalletMutation,
+  useGetWalletReportQuery,
 } = walletsApi;
