@@ -107,7 +107,7 @@ async def create_virtual_account(
             raise NombaAPIError(f"Nomba account creation failed: {response.text}", response.status_code)
         result = response.json()
         if result.get("code") != "00":
-            raise NombaAPIError(f"Nomba account creation error: {result.get('description', 'Unknown')}")
+            raise NombaAPIError(f"Nomba account creation error: {result.get('description', 'Unknown')} - Details: {response.text}")
         data = result["data"]
         return {
             "account_number": data["bankAccountNumber"],
