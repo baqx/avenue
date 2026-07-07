@@ -210,7 +210,8 @@ async def get_bank_code_from_name(
             # Sometimes APIs return '0' or '00' for success
             pass 
         
-        banks_list = result.get("data", {}).get("results", [])
+        data_obj = result.get("data") or {}
+        banks_list = data_obj.get("results", []) if isinstance(data_obj, dict) else (data_obj if isinstance(data_obj, list) else [])
         
         # Populate the cache
         new_cache = {}
@@ -261,7 +262,8 @@ async def get_banks(
         if result.get("code") not in ("00", "0"):
             raise NombaAPIError(f"Nomba banks fetch error: {result.get('description', 'Unknown')}")
             
-        _BANKS_CACHE = result.get("data", {}).get("results", [])
+        data_obj = result.get("data") or {}
+        _BANKS_CACHE = data_obj.get("results", []) if isinstance(data_obj, dict) else (data_obj if isinstance(data_obj, list) else [])
         _BANKS_CACHE_TIME = now
         return _BANKS_CACHE
 
