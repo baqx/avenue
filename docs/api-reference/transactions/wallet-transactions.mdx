@@ -34,6 +34,10 @@ description: 'List chronological ledger transactions specifically for a single w
   All amounts and balances in this endpoint are represented in **kobo** (e.g., `500000` = ₦5,000.00). Ensure you do not send or expect Naira values.
 </Note>
 
+<Note>
+  **Understanding `status` vs Suspense**: When a transaction status is `PENDING`, it means the transaction is actively processing at the bank network level (like a standard pending transfer). This is **not** the same as the Suspense Queue. Transactions stuck in the Suspense Queue (due to AI confidence or closed wallets) are not returned in this ledger endpoint until they are resolved.
+</Note>
+
 <ResponseExample>
 ```json
 {

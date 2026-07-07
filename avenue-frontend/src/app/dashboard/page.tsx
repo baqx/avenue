@@ -135,13 +135,24 @@ export default function DashboardOverview() {
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {tx.status === "SETTLED" ? (
+                        {tx.status === "SETTLED" && (
                           <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#f0fdf4] text-[#059669] border border-[#10b981]/30">
                             SETTLED
                           </span>
-                        ) : (
+                        )}
+                        {tx.status === "PENDING" && (
                           <span className="px-2.5 py-1 rounded text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fcd34d]">
-                            PENDING (SUSPENSE)
+                            PENDING
+                          </span>
+                        )}
+                        {tx.status === "REVERSED" && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-gray-100 text-gray-700 border border-gray-300">
+                            REVERSED
+                          </span>
+                        )}
+                        {!["SETTLED", "PENDING", "REVERSED"].includes(tx.status) && (
+                          <span className="px-2.5 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800 border border-gray-300">
+                            {tx.status}
                           </span>
                         )}
                       </td>
