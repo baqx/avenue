@@ -33,6 +33,7 @@ export interface NombaConfigResponse {
   client_id: string;
   client_secret_masked: string;
   inbound_webhook_url: string;
+  sub_account_id?: string;
 }
 
 export const developerApi = baseApi.injectEndpoints({

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Key, Link as LinkIcon, User, Plus, Trash, Eye, EyeClosed, PlugsConnected, ArrowClockwise, WarningCircle, Copy, BookOpenText } from "@phosphor-icons/react";
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { 
   useGetProfileQuery, 
   useUpdateProfileMutation,
@@ -26,7 +27,7 @@ export default function SettingsPage() {
   // Nomba Config State
   const { data: nombaData, isLoading: isNombaLoading } = useGetNombaConfigQuery();
   const [configureNomba, { isLoading: isConfiguringNomba }] = useConfigureNombaMutation();
-  const [nombaForm, setNombaForm] = useState({ account_id: '', client_id: '', client_secret: '', webhook_signature_key: '' });
+  const [nombaForm, setNombaForm] = useState({ account_id: '', client_id: '', client_secret: '', webhook_signature_key: '', sub_account_id: '' });
 
   // Keys State
   const { data: keysData, isLoading: isKeysLoading } = useGetApiKeysQuery();
@@ -36,8 +37,11 @@ export default function SettingsPage() {
   
   // For showing the newly created full_key once
   const [newlyCreatedKeys, setNewlyCreatedKeys] = useState<Record<string, string>>({});
+  const [newKeyModalData, setNewKeyModalData] = useState<{ full_key: string, type: string, label: string } | null>(null);
 
   const toast = useToast();
+
+  const sortedKeys = [...(keysData || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Prefill forms when data is loaded
   useEffect(() => {
@@ -50,6 +54,7 @@ export default function SettingsPage() {
     if (nombaData) {
       setNombaForm({
         account_id: nombaData.account_id || '',
+        sub_account_id: nombaData.sub_account_id || '',
         client_id: nombaData.client_id || '',
         client_secret: '', // Don't prefill secrets
         webhook_signature_key: ''
@@ -79,7 +84,7 @@ export default function SettingsPage() {
       }
       await configureNomba(nombaForm).unwrap();
       toast.success("Integration Saved", "Nomba credentials have been updated successfully.");
-      setNombaForm({ account_id: '', client_id: '', client_secret: '', webhook_signature_key: '' });
+      setNombaForm({ account_id: '', sub_account_id: '', client_id: '', client_secret: '', webhook_signature_key: '' });
     } catch (err: any) {
       toast.error("Integration Failed", err?.data?.error?.message || "Could not update Nomba credentials.");
     }
@@ -89,6 +94,7 @@ export default function SettingsPage() {
     try {
       const res = await createKey({ type, label: `My ${type === 'live' ? 'Production' : 'Staging'} Key` }).unwrap();
       toast.success("Key Created", `A new ${type} key was successfully generated.`);
+      setNewKeyModalData({ full_key: res.full_key, type: res.type, label: res.label || "Secret Key" });
       setNewlyCreatedKeys(prev => ({ ...prev, [res.id]: res.full_key }));
       setRevealedKeys(prev => ({ ...prev, [res.id]: true }));
     } catch (err: any) {
@@ -162,10 +168,10 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={() => handleCreateKey("test")} variant="outline" className="h-9 gap-2 text-sm border-[#e4e7e9] text-[#022c22]" disabled={isCreatingKey}>
-                    <Plus weight="bold" /> New Test Key
+                    {isCreatingKey ? <div className="w-4 h-4 border-2 border-[#022c22] border-t-transparent rounded-full animate-spin" /> : <Plus weight="bold" />} New Test Key
                   </Button>
                   <Button onClick={() => handleCreateKey("live")} className="h-9 gap-2 text-sm bg-[#022c22] text-white hover:bg-[#064e3b]" disabled={isCreatingKey}>
-                    <Plus weight="bold" /> New Live Key
+                    {isCreatingKey ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus weight="bold" />} New Live Key
                   </Button>
                 </div>
               </div>
@@ -177,7 +183,7 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {keysData?.map(key => {
+                  {sortedKeys.map(key => {
                     const isNewlyCreated = !!newlyCreatedKeys[key.id];
                     const isRevealed = revealedKeys[key.id];
                     const displayValue = isNewlyCreated && isRevealed 
@@ -240,8 +246,12 @@ export default function SettingsPage() {
                     );
                   })}
                   {(!keysData || keysData.length === 0) && (
-                    <div className="text-center p-8 border border-dashed border-[#e4e7e9] rounded-xl text-[#6a6c6c]">
-                      No API keys generated yet.
+                    <div className="text-center py-12 px-6 border-2 border-dashed border-[#e4e7e9] rounded-xl bg-[#f8fafc]">
+                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-3">
+                        <Key className="w-6 h-6 text-[#bbbdbd]" weight="duotone" />
+                      </div>
+                      <h4 className="text-base font-semibold text-[#022c22] mb-1">No API keys yet</h4>
+                      <p className="text-sm text-[#6a6c6c]">Create a test or live key to start authenticating your requests to Avenue.</p>
                     </div>
                   )}
                 </div>
@@ -291,6 +301,17 @@ export default function SettingsPage() {
                     value={nombaForm.account_id}
                     onChange={e => setNombaForm({...nombaForm, account_id: e.target.value})}
                     placeholder={nombaData?.account_id || "Enter your Nomba Account ID"}
+                    className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm outline-none bg-white text-[#022c22] focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-[#022c22]">Sub Account ID (Optional)</label>
+                  <input 
+                    type="text"
+                    value={nombaForm.sub_account_id}
+                    onChange={e => setNombaForm({...nombaForm, sub_account_id: e.target.value})}
+                    placeholder={nombaData?.sub_account_id || "Enter your Nomba Sub Account ID"}
                     className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm outline-none bg-white text-[#022c22] focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
                   />
                 </div>
@@ -389,6 +410,52 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <Modal 
+        isOpen={!!newKeyModalData} 
+        onClose={() => setNewKeyModalData(null)} 
+        title="Your New API Key"
+      >
+        {newKeyModalData && (
+          <div className="space-y-4">
+            <div className={`p-4 rounded-xl border flex items-start gap-3 ${newKeyModalData.type === 'live' ? 'bg-[#f0fdf4] border-[#10b981]/30 text-[#059669]' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+              <WarningCircle weight="fill" className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold mb-1">Please copy this key now.</h4>
+                <p className="text-sm opacity-90">For security reasons, you will not be able to see it again after closing this window.</p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 mt-6">
+              <label className="text-sm font-medium text-[#022c22]">Secret Key</label>
+              <div className="relative flex items-center gap-2">
+                <input 
+                  type="text"
+                  value={newKeyModalData.full_key}
+                  readOnly
+                  className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm outline-none bg-white text-[#022c22] font-mono font-bold"
+                />
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(newKeyModalData.full_key);
+                    toast.success("Copied", "API key copied to clipboard.");
+                  }}
+                  className="h-11 px-4 bg-[#022c22] text-white hover:bg-[#064e3b]"
+                >
+                  <Copy weight="bold" className="mr-2" /> Copy
+                </Button>
+              </div>
+            </div>
+            
+            <div className="pt-4 flex justify-end">
+              <Button onClick={() => setNewKeyModalData(null)} variant="outline" className="border-[#e4e7e9]">
+                I have copied it safely
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
     </PageReveal>
   );
 }
