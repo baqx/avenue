@@ -379,6 +379,40 @@ Developer registers their own app URL in Avenue (outbound)
 }
 ```
 
+**Suspense Created Webhook Payload (`suspense.created`):**
+```json
+{
+  "event_id": "evt_002",
+  "event_type": "suspense.created",
+  "api_version": "2026-07-01",
+  "created_at": "2026-07-01T12:05:00Z",
+  "data": {
+    "suspense_id": "890022ce-bae0-45c1-9b9d-ee7872e6ca27",
+    "reason": "AI_LOW_CONFIDENCE",
+    "amount": 5000,
+    "currency": "NGN",
+    "sender_name": "John Doe",
+    "account_number": "1234567890"
+  }
+}
+```
+
+**Suspense Resolved Webhook Payload (`suspense.resolved`):**
+```json
+{
+  "event_id": "evt_003",
+  "event_type": "suspense.resolved",
+  "api_version": "2026-07-01",
+  "created_at": "2026-07-01T12:15:00Z",
+  "data": {
+    "suspense_id": "890022ce-bae0-45c1-9b9d-ee7872e6ca27",
+    "action_taken": "REFUND",
+    "resolved_by": "manual",
+    "target_wallet_id": null
+  }
+}
+```
+
 ---
 
 ### Module 9: Analytics & Reporting

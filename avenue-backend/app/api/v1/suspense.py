@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import CurrentDeveloper
 from app.db.models.developer import Developer
-from app.db.models.nomba_config import NombaConfig
+from app.db.models.nomba_config import NombaConfig, OutboundWebhook
 from app.db.models.suspense import SuspenseItem
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
@@ -17,6 +17,7 @@ from typing import Any
 from app.core.errors import BadRequestError, NotFoundError
 from app.services.ledger import record_credit
 from app.services.nomba import initiate_transfer
+from app.services.webhook_dispatcher import dispatch_event
 
 router = APIRouter()
 
@@ -111,6 +112,33 @@ async def resolve_suspense(
     item.resolved_by = "manual"
     item.resolution_note = body.note
     await db.commit()
+
+    # Dispatch outbound webhook
+    try:
+        outbound_result = await db.execute(
+            select(OutboundWebhook).where(OutboundWebhook.developer_id == developer.id)
+        )
+        outbound_webhook = outbound_result.scalar_one_or_none()
+
+        if outbound_webhook and outbound_webhook.is_active:
+            await dispatch_event(
+                developer_id=developer.id,
+                event_type="suspense.resolved",
+                data={
+                    "suspense_id": str(item.id),
+                    "action_taken": body.action,
+                    "resolved_by": "manual",
+                    "target_wallet_id": str(body.target_wallet_id) if body.target_wallet_id else None,
+                },
+                webhook_url=outbound_webhook.url,
+                signing_secret=outbound_webhook.signing_secret,
+                db=db,
+            )
+            await db.commit()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to dispatch suspense.resolved webhook: {str(e)}")
+
     return StandardResponse(data={"message": "Suspense item resolved.", "action": body.action})
 
 
