@@ -160,7 +160,7 @@ export default function AgentsPage() {
                   
                   <div className="p-5 flex-1 flex flex-col justify-center">
                     <div className="bg-[#f7f9fb] rounded-lg p-3 border border-[#e4e7e9] font-mono text-sm mb-3 text-[#022c22]">
-                      <span className="text-[#64748b]">IF</span> {agent.trigger} {agent.threshold ? `> ₦${agent.threshold}` : ''}
+                      <span className="text-[#64748b]">IF</span> {agent.trigger} {agent.threshold ? `> ₦${(agent.threshold / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''}
                     </div>
                     <div className="bg-[#f7f9fb] rounded-lg p-3 border border-[#e4e7e9] font-mono text-sm text-[#022c22]">
                       <span className="text-[#10b981]">THEN</span> {agent.action}
@@ -227,7 +227,7 @@ export default function AgentsPage() {
               <div>
                 <div className="text-xs text-[#6a6c6c] font-semibold uppercase tracking-wider mb-2">When this happens:</div>
                 <div className="bg-white border border-[#e4e7e9] rounded-lg p-3 font-mono text-sm text-[#022c22]">
-                  {selectedAgent.trigger} {selectedAgent.threshold ? `> ${selectedAgent.threshold}` : ''}
+                  {selectedAgent.trigger} {selectedAgent.threshold ? `> ₦${(selectedAgent.threshold / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''}
                 </div>
               </div>
               <div className="flex justify-center">

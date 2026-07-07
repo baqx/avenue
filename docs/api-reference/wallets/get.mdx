@@ -18,6 +18,10 @@ description: 'Retrieve full details for a specific wallet.'
 
 ## Response
 
+<Note>
+  All amounts and balances in this endpoint are represented in **kobo** (e.g., `500000` = ₦5,000.00). Ensure you do not send or expect Naira values.
+</Note>
+
 <ResponseExample>
 ```json
 {
@@ -30,7 +34,7 @@ description: 'Retrieve full details for a specific wallet.'
     "email": "john.doe@example.com",
     "label": "John Doe — School Fees",
     "account_number": "2211334455",
-    "bank_name": "Guaranty Trust Bank",
+    "bank_name": "Nomba MFB",
     "account_name": "PropTech Inc / John Doe",
     "balance": 1500000,
     "currency": "NGN",
