@@ -56,6 +56,7 @@ class NombaConfigRequest(BaseModel):
     client_id: str
     client_secret: str
     webhook_signature_key: str  # Signature key from Nomba dashboard
+    sub_account_id: Optional[str] = None
 
 
 class NombaConfigResponse(BaseModel):
@@ -63,6 +64,7 @@ class NombaConfigResponse(BaseModel):
     client_id: str
     client_secret_masked: str  # e.g. "••••••••xxxx"
     inbound_webhook_url: str
+    sub_account_id: Optional[str] = None
 
 
 class OutboundWebhookRequest(BaseModel):

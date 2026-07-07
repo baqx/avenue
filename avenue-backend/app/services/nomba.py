@@ -79,6 +79,7 @@ async def create_virtual_account(
     encrypted_secret: str,
     account_ref: str,
     account_name: str,
+    sub_account_id: str | None = None,
 ) -> dict:
     """
     Create a dedicated virtual account (NUBAN) on Nomba.
@@ -89,9 +90,10 @@ async def create_virtual_account(
     Returns: { account_number, bank_name, account_name, nomba_account_id, account_ref }
     """
     token = await _get_nomba_token(account_id, client_id, encrypted_secret)
+    endpoint = f"{settings.NOMBA_BASE_URL}/v1/accounts/virtual/{sub_account_id}" if sub_account_id else f"{settings.NOMBA_BASE_URL}/v1/accounts/virtual"
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.NOMBA_BASE_URL}/v1/accounts/virtual",
+            endpoint,
             headers={
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
@@ -129,6 +131,7 @@ async def initiate_transfer(
     narration: str,
     sender_name: str,
     merchant_tx_ref: str | None = None,
+    sub_account_id: str | None = None,
 ) -> dict:
     """
     Initiate an outbound bank transfer from the parent account.
@@ -144,9 +147,10 @@ async def initiate_transfer(
     if not merchant_tx_ref:
         merchant_tx_ref = f"AVE-{uuid.uuid4().hex[:16].upper()}"
 
+    endpoint = f"{settings.NOMBA_BASE_URL}/v2/transfers/bank/{sub_account_id}" if sub_account_id else f"{settings.NOMBA_BASE_URL}/v2/transfers/bank"
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.NOMBA_BASE_URL}/v2/transfers/bank",
+            endpoint,
             headers={
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",

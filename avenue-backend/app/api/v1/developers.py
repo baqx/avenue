@@ -102,6 +102,7 @@ async def save_nomba_config(
         config.client_id = body.client_id
         config.encrypted_client_secret = encrypt(body.client_secret)
         config.webhook_signature_key = body.webhook_signature_key
+        config.sub_account_id = body.sub_account_id
     else:
         config = NombaConfig(
             developer_id=developer.id,
@@ -109,6 +110,7 @@ async def save_nomba_config(
             client_id=body.client_id,
             encrypted_client_secret=encrypt(body.client_secret),
             webhook_signature_key=body.webhook_signature_key,
+            sub_account_id=body.sub_account_id,
         )
         db.add(config)
     await db.commit()
@@ -118,6 +120,7 @@ async def save_nomba_config(
         client_id=config.client_id,
         client_secret_masked="••••••••" + body.client_secret[-4:],
         inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
+        sub_account_id=config.sub_account_id,
     ))
 
 
@@ -132,6 +135,7 @@ async def get_nomba_config(developer: Developer = CurrentDeveloperJWT, db: Async
         client_id=config.client_id,
         client_secret_masked="••••••••",
         inbound_webhook_url=f"{settings.BACKEND_URL}/v1/webhooks/inbound/{developer.id}",
+        sub_account_id=config.sub_account_id,
     ))
 
 

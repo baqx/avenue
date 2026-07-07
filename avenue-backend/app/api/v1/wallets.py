@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import re
 
+import uuid as uuid_mod
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
@@ -58,8 +59,11 @@ async def create_wallet(
     account_name = re.sub(r'\s+', ' ', clean_name).strip()
 
     # Generate a unique account reference for Nomba (16-64 chars required)
-    import uuid as uuid_mod
+
     account_ref = f"ave_{uuid_mod.uuid4().hex}"  # e.g. "ave_a1b2c3d4..." — 36 chars
+
+    # Resolve target sub-account
+    target_sub_account_id = body.sub_account_id or nomba_config.sub_account_id
 
     # Call Nomba to provision the NUBAN
     nomba_data = await create_virtual_account(
@@ -68,6 +72,7 @@ async def create_wallet(
         encrypted_secret=nomba_config.encrypted_client_secret,
         account_ref=account_ref,
         account_name=account_name[:64],
+        sub_account_id=target_sub_account_id,
     )
 
     wallet = Wallet(
@@ -80,6 +85,7 @@ async def create_wallet(
         currency=body.currency,
         system_prompt=body.system_prompt,
         nomba_account_id=nomba_data["nomba_account_id"],
+        nomba_sub_account_id=target_sub_account_id,
         account_number=nomba_data["account_number"],
         bank_name=nomba_data["bank_name"],
         account_name=nomba_data["account_name"],
@@ -255,38 +261,44 @@ async def transfer_funds(
     dest_wallet = result.scalar_one_or_none()
 
     if dest_wallet:
-        # Internal transfer
-        debit_entry = await ledger_service.record_debit(
-            wallet=wallet,
-            amount_kobo=body.amount,
-            developer_id=developer.id,
-            description=f"Internal transfer to {dest_wallet.account_number}",
-            db=db,
-        )
-        await ledger_service.record_credit(
-            wallet=dest_wallet,
-            amount_kobo=body.amount,
-            nomba_reference=f"INT-{uuid.uuid4().hex[:12].upper()}",
-            developer_id=developer.id,
-            sender_name=wallet.account_name,
-            sender_account=wallet.account_number,
-            raw_narration=body.narration,
-            ai_metadata=None,
-            db=db,
-        )
-        await db.commit()
-        
-        # Evaluate agents on destination wallet
-        await evaluate_agents(wallet=dest_wallet, new_credit_amount=body.amount, db=db)
-        await db.commit()
-        
-        return StandardResponse(data=TransferResponse(
-            status="SUCCESS",
-            transaction_id=str(debit_entry.id),
-            nomba_reference=debit_entry.nomba_reference,
-            new_balance=debit_entry.balance_after,
-            currency=wallet.currency,
-        ))
+        if wallet.nomba_sub_account_id != dest_wallet.nomba_sub_account_id:
+            # Different sub-accounts: Fallback to external transfer.
+            # Auto-fill the destination account name since we know it.
+            body.destination_account_name = body.destination_account_name or dest_wallet.account_name
+            dest_wallet = None  # Unset so it falls through to external transfer logic
+        else:
+            # Internal transfer
+            debit_entry = await ledger_service.record_debit(
+                wallet=wallet,
+                amount_kobo=body.amount,
+                developer_id=developer.id,
+                description=f"Internal transfer to {dest_wallet.account_number}",
+                db=db,
+            )
+            await ledger_service.record_credit(
+                wallet=dest_wallet,
+                amount_kobo=body.amount,
+                nomba_reference=f"INT-{uuid.uuid4().hex[:12].upper()}",
+                developer_id=developer.id,
+                sender_name=wallet.account_name,
+                sender_account=wallet.account_number,
+                raw_narration=body.narration,
+                ai_metadata=None,
+                db=db,
+            )
+            await db.commit()
+            
+            # Evaluate agents on destination wallet
+            await evaluate_agents(wallet=dest_wallet, new_credit_amount=body.amount, db=db)
+            await db.commit()
+            
+            return StandardResponse(data=TransferResponse(
+                status="SUCCESS",
+                transaction_id=str(debit_entry.id),
+                nomba_reference=debit_entry.nomba_reference,
+                new_balance=debit_entry.balance_after,
+                currency=wallet.currency,
+            ))
     
     # External transfer via Nomba
     if not body.destination_bank_code or not body.destination_account_name:
@@ -403,5 +415,6 @@ def _wallet_to_response(wallet: Wallet, balance: int) -> WalletResponse:
         status=wallet.status,
         system_prompt=wallet.system_prompt,
         allow_transfers_out=wallet.allow_transfers_out,
+        sub_account_id=wallet.nomba_sub_account_id,
         created_at=wallet.created_at,
     )
