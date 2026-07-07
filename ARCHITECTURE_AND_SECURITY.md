@@ -63,7 +63,7 @@ Developer Account
 │                                                                      │
 │  ┌────────────────────┐    ┌────────────────────────────────────┐   │
 │  │   FastAPI Routes   │    │         arq Background Workers      │   │
-│  │  (sync, sync IO)   │───▶│  process_inbound_webhook_task      │   │
+│  │  (async, sync IO)   │───▶│  process_inbound_webhook_task      │   │
 │  └────────────────────┘    │  retry_failed_webhooks_task        │   │
 │                            └──────────────┬─────────────────────┘   │
 │                                           │                          │
