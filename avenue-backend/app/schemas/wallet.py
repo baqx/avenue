@@ -14,6 +14,7 @@ class CreateWalletRequest(BaseModel):
     currency: str = "NGN"
     system_prompt: Optional[str] = None
     allow_transfers_out: bool = True
+    sub_account_id: Optional[str] = None
 
 
 class UpdateWalletRequest(BaseModel):
@@ -44,6 +45,7 @@ class WalletResponse(BaseModel):
     status: str
     system_prompt: Optional[str] = None
     allow_transfers_out: bool
+    sub_account_id: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

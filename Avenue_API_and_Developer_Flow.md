@@ -103,8 +103,8 @@ Developer registers their own app URL in Avenue (outbound)
 | `GET` | `/v1/developers/me/keys` | List all API keys (live + test, masked) |
 | `POST` | `/v1/developers/me/keys` | Generate a new API key with a label |
 | `DELETE` | `/v1/developers/me/keys/:key_id` | Revoke/delete an API key |
-| `POST` | `/v1/developers/me/nomba-config` | Save Nomba `account_id`, `client_id`, `client_secret` (encrypted at rest), and `webhook_signature_key` |
-| `GET` | `/v1/developers/me/nomba-config` | View connected Nomba config (`account_id` and `client_id` shown, secret masked) |
+| `POST` | `/v1/developers/me/nomba-config` | Save Nomba `account_id`, `client_id`, `client_secret` (encrypted at rest), `webhook_signature_key`, and optional `sub_account_id` |
+| `GET` | `/v1/developers/me/nomba-config` | View connected Nomba config (`account_id`, `client_id`, and `sub_account_id` shown, secret masked) |
 | `DELETE` | `/v1/developers/me/nomba-config` | Remove Nomba credentials |
 | `GET` | `/v1/developers/me/inbound-webhook-url` | Get the unique Nomba-facing inbound URL for this developer |
 | `POST` | `/v1/developers/me/outbound-webhook` | Set/update the developer's outbound webhook URL + optional signing secret |
@@ -143,7 +143,8 @@ Developer registers their own app URL in Avenue (outbound)
   "label": "John Doe — School Fees",
   "currency": "NGN",
   "system_prompt": "This wallet collects school fees. Expected amount: 50,000 NGN per term. Flag anything under 50,000 as an underpayment.",
-  "allow_transfers_out": true
+  "allow_transfers_out": true,
+  "sub_account_id": "sub_12345"
 }
 ```
 **Create Wallet Response:**
@@ -431,6 +432,7 @@ Developer registers their own app URL in Avenue (outbound)
 | `client_id` | TEXT | NOT NULL | Stored in plaintext (safe) |
 | `encrypted_client_secret` | TEXT | NOT NULL | AES-256 encrypted |
 | `webhook_signature_key` | VARCHAR(255) | NOT NULL | Key from Nomba dashboard to verify HMAC signatures |
+| `sub_account_id` | VARCHAR(255) | NULLABLE | Default Nomba Sub-Account |
 | `created_at` | TIMESTAMPTZ | DEFAULT now() | |
 | `updated_at` | TIMESTAMPTZ | | |
 
@@ -456,6 +458,7 @@ Developer registers their own app URL in Avenue (outbound)
 | `email` | VARCHAR(255) | NOT NULL | User's email |
 | `label` | VARCHAR(255) | | Human-readable wallet name |
 | `nomba_account_id` | TEXT | UNIQUE, NOT NULL | Nomba's internal virtual account ID |
+| `nomba_sub_account_id` | VARCHAR(255) | NULLABLE | Bound Sub-Account ID |
 | `account_number` | VARCHAR(20) | UNIQUE, NOT NULL | The NUBAN |
 | `bank_name` | VARCHAR(100) | NOT NULL | |
 | `account_name` | VARCHAR(255) | NOT NULL | e.g. "PropTech Inc / John Doe" |
