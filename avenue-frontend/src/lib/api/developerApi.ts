@@ -3,6 +3,7 @@ import { baseApi } from './baseApi';
 export interface OutboundWebhookConfig {
   id: string;
   url: string;
+  signing_secret: string;
   is_active: boolean;
   created_at: string;
 }

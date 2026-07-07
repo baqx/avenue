@@ -74,6 +74,7 @@ class OutboundWebhookRequest(BaseModel):
 class OutboundWebhookResponse(BaseModel):
     id: uuid.UUID
     url: str
+    signing_secret: str
     is_active: bool
     created_at: datetime
 

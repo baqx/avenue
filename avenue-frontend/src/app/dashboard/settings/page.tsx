@@ -167,9 +167,6 @@ export default function SettingsPage() {
                   <p className="text-sm text-[#6a6c6c]">Manage your secret keys for API access.</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleCreateKey("test")} variant="outline" className="h-9 gap-2 text-sm border-[#e4e7e9] text-[#022c22]" disabled={isCreatingKey}>
-                    {isCreatingKey ? <div className="w-4 h-4 border-2 border-[#022c22] border-t-transparent rounded-full animate-spin" /> : <Plus weight="bold" />} New Test Key
-                  </Button>
                   <Button onClick={() => handleCreateKey("live")} className="h-9 gap-2 text-sm bg-[#022c22] text-white hover:bg-[#064e3b]" disabled={isCreatingKey}>
                     {isCreatingKey ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus weight="bold" />} New Live Key
                   </Button>
@@ -251,7 +248,7 @@ export default function SettingsPage() {
                         <Key className="w-6 h-6 text-[#bbbdbd]" weight="duotone" />
                       </div>
                       <h4 className="text-base font-semibold text-[#022c22] mb-1">No API keys yet</h4>
-                      <p className="text-sm text-[#6a6c6c]">Create a test or live key to start authenticating your requests to Avenue.</p>
+                      <p className="text-sm text-[#6a6c6c]">Create a live key to start authenticating your requests to Avenue.</p>
                     </div>
                   )}
                 </div>

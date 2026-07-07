@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
 import { useGetWebhookLogsQuery } from "@/lib/api/webhooksApi";
-import { useGetWebhookConfigQuery, useConfigureWebhookMutation } from "@/lib/api/developerApi";
+import { useGetWebhookConfigQuery, useConfigureWebhookMutation, useGetProfileQuery } from "@/lib/api/developerApi";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 import { TableShimmer, CardShimmer } from "@/components/ui/Shimmer";
 
@@ -15,8 +15,10 @@ export default function WebhooksPage() {
   const [activeTab, setActiveTab] = useState<"config" | "logs">("config");
   const [copied, setCopied] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [revealSecret, setRevealSecret] = useState(false);
 
   const { data: logsData, isLoading: isLogsLoading } = useGetWebhookLogsQuery({ page: 1, limit: 100 });
+  const { data: profileData } = useGetProfileQuery();
   const { data: configData, isLoading: isConfigLoading } = useGetWebhookConfigQuery();
   const [configureWebhook, { isLoading: isSaving }] = useConfigureWebhookMutation();
   const toast = useToast();
@@ -32,7 +34,7 @@ export default function WebhooksPage() {
   const logs = logsData?.items || [];
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.avenue.so/v1";
-  const inboundUrl = `${baseUrl}/webhooks/inbound/dev_8f92j29x`;
+  const inboundUrl = profileData?.id ? `${baseUrl}/webhooks/inbound/${profileData.id}` : "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inboundUrl);
@@ -133,14 +135,20 @@ export default function WebhooksPage() {
                     <label className="text-sm font-medium text-[#022c22]">Signing Secret</label>
                     <div className="relative">
                       <input 
-                        type="password"
-                        defaultValue="whsec_8f92j29x8f92j29x8f92j29x"
+                        type={revealSecret ? "text" : "password"}
+                        value={configData?.signing_secret || ""}
                         readOnly
+                        placeholder="Save a webhook URL to generate a secret"
                         className="w-full h-11 pl-3.5 pr-24 rounded-lg border border-[#e4e7e9] text-sm bg-[#f7f9fb] outline-none text-[#6a6c6c]"
                       />
-                      <button className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#022c22] bg-white border border-[#e4e7e9] px-2 py-1 rounded hover:bg-[#f7f9fb]">
-                        Reveal
-                      </button>
+                      {configData?.signing_secret && (
+                        <button 
+                          onClick={() => setRevealSecret(!revealSecret)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#022c22] bg-white border border-[#e4e7e9] px-2 py-1 rounded hover:bg-[#f7f9fb]"
+                        >
+                          {revealSecret ? "Hide" : "Reveal"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-3 pt-2">
