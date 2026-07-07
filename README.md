@@ -1,8 +1,12 @@
 # Avenue
 
+![Avenue Logo](avenue-frontend/public/logo.png)
+
 **Intelligent Wallet-as-a-Service & Ledger Infrastructure — Built on Nomba**
 
 > Built for the **Nomba x DevCareer Hackathon 2026** — Infrastructure Track: *Dedicated Virtual Accounts*
+> 
+> See also: [Architecture & Security](file:///c:/Users/use/work/avenue/ARCHITECTURE_AND_SECURITY.md)
 
 Avenue is a managed infrastructure layer that turns Nomba's raw payment primitives into a production-grade, AI-powered wallet system. Developers bring the users and the business logic; Avenue handles the financial state, intelligent reconciliation, and everything in between.
 
@@ -34,7 +38,7 @@ Building on Nomba's APIs is not the hard part. The hard part is everything *afte
 - **Unstructured narrations** — Bank transfer memos are notoriously messy. Parsing *"for rent and light bro"* reliably requires AI, not regex.
 - **Edge cases** — Misdirected payments, partial payments, transfers to closed wallets — each one is a different failure mode.
 
-Avenue is the layer that handles all of this. One API key, and you get:
+Avenue is a fully managed Wallet-as-a-Service (WaaS) layer that handles all of this. One API key, and you get:
 
 - Dedicated NUBANs per customer, provisioned instantly
 - ACID-compliant double-entry ledger with immutable history
