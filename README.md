@@ -6,7 +6,7 @@
 
 > Built for the **Nomba x DevCareer Hackathon 2026** — Infrastructure Track: *Dedicated Virtual Accounts*
 > 
-> 📚 See also: [Architecture & Security](file:///c:/Users/use/work/avenue/ARCHITECTURE_AND_SECURITY.md)
+> See also: [Architecture & Security](file:///c:/Users/use/work/avenue/ARCHITECTURE_AND_SECURITY.md)
 
 Avenue is a managed infrastructure layer that turns Nomba's raw payment primitives into a production-grade, AI-powered wallet system. Developers bring the users and the business logic; Avenue handles the financial state, intelligent reconciliation, and everything in between.
 
