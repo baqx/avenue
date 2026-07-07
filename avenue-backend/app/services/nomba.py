@@ -26,6 +26,7 @@ import time
 from datetime import datetime
 
 _TOKEN_CACHE = {}  # { client_id: {"token": "...", "expires_at": timestamp_float} }
+_BANK_CODE_CACHE = {}  # { "bank_name_lowercase": "bank_code" }
 
 async def _get_nomba_token(account_id: str, client_id: str, encrypted_secret: str) -> str:
     """
@@ -170,3 +171,58 @@ async def initiate_transfer(
         if response.status_code not in (200, 201):
             raise NombaAPIError(f"Nomba transfer failed: {response.text}", response.status_code)
         return response.json().get("data", {})
+
+
+async def get_bank_code_from_name(
+    account_id: str,
+    client_id: str,
+    encrypted_secret: str,
+    bank_name: str,
+) -> str | None:
+    """
+    Fetch the bank code for a given bank name by querying the Nomba /v1/transfers/banks API.
+    Caches the results to avoid unnecessary network calls.
+    Returns None if the bank name cannot be found.
+    """
+    global _BANK_CODE_CACHE
+    
+    target_name = bank_name.strip().lower()
+    
+    # Return from cache if we already have it
+    if _BANK_CODE_CACHE and target_name in _BANK_CODE_CACHE:
+        return _BANK_CODE_CACHE[target_name]
+
+    # Otherwise fetch from Nomba
+    token = await _get_nomba_token(account_id, client_id, encrypted_secret)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{settings.NOMBA_BASE_URL}/v1/transfers/banks",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "accountId": account_id,
+            },
+            timeout=15.0,
+        )
+        if response.status_code != 200:
+            raise NombaAPIError(f"Failed to fetch bank codes: {response.text}", response.status_code)
+        
+        result = response.json()
+        if result.get("code") != "00" and result.get("code") != "0":
+            # Sometimes APIs return '0' or '00' for success
+            pass 
+        
+        banks_list = result.get("data", {}).get("results", [])
+        
+        # Populate the cache
+        new_cache = {}
+        for bank in banks_list:
+            b_name = bank.get("name", "").strip().lower()
+            b_code = bank.get("code", "")
+            if b_name and b_code:
+                new_cache[b_name] = b_code
+                
+        if new_cache:
+            _BANK_CODE_CACHE = new_cache
+            
+        return _BANK_CODE_CACHE.get(target_name)
+

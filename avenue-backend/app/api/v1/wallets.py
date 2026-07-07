@@ -29,7 +29,7 @@ from app.schemas.wallet import (
 )
 from app.services import ledger as ledger_service
 from app.services.agent_runner import evaluate_agents
-from app.services.nomba import create_virtual_account, initiate_transfer
+from app.services.nomba import create_virtual_account, initiate_transfer, get_bank_code_from_name
 from app.schemas.base import StandardResponse
 from typing import Any
 
@@ -263,9 +263,30 @@ async def transfer_funds(
     if dest_wallet:
         if wallet.nomba_sub_account_id != dest_wallet.nomba_sub_account_id:
             # Different sub-accounts: Fallback to external transfer.
-            # Auto-fill the destination account name since we know it.
+            # 1. Auto-fill the destination account name
             body.destination_account_name = body.destination_account_name or dest_wallet.account_name
-            dest_wallet = None  # Unset so it falls through to external transfer logic
+            
+            # 2. Get Nomba config early to fetch the bank code
+            result_config = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
+            nomba_config = result_config.scalar_one_or_none()
+            if not nomba_config:
+                raise BadRequestError("Nomba config not found. Required for cross sub-account transfers.")
+                
+            # 3. Dynamically lookup the bank code using Nomba's API (cached)
+            if not body.destination_bank_code:
+                bank_code = await get_bank_code_from_name(
+                    account_id=nomba_config.account_id,
+                    client_id=nomba_config.client_id,
+                    encrypted_secret=nomba_config.encrypted_client_secret,
+                    bank_name=dest_wallet.bank_name
+                )
+                if bank_code:
+                    body.destination_bank_code = bank_code
+                else:
+                    raise BadRequestError(f"Could not automatically resolve bank code for '{dest_wallet.bank_name}'. Please provide destination_bank_code manually.")
+            
+            # Unset so it falls through to external transfer logic
+            dest_wallet = None  
         else:
             # Internal transfer
             debit_entry = await ledger_service.record_debit(
