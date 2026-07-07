@@ -1,0 +1,34 @@
+---
+title: 'Resolve Account'
+api: 'POST /v1/banks/resolve'
+description: 'Look up an external bank account name using the account number and bank code.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Request Body
+
+<ParamField body="account_number" type="string" required>
+  The external 10-digit NUBAN account number.
+</ParamField>
+<ParamField body="bank_code" type="string" required>
+  The CBN bank code of the destination (e.g. `058` for GTB). Retrieve this from the List Banks endpoint.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "account_number": "0554772814",
+    "account_name": "M.A Animashaun"
+  }
+}
+```
+</ResponseExample>

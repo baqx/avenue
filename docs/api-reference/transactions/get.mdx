@@ -23,22 +23,25 @@ description: 'Retrieve a single transaction, including the full Avenue Intellige
 {
   "success": true,
   "data": {
-    "transaction_id": "tx_xyz999",
-    "wallet_id": "wal_abc123",
+    "id": "t9c3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "developer_id": "d7b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
     "type": "CREDIT",
-    "amount": 25000,
+    "amount": 2500000,
     "balance_before": 0,
-    "balance_after": 25000,
+    "balance_after": 2500000,
+    "currency": "NGN",
     "status": "SETTLED",
-    "nomba_reference": "NOM-TXN-12345",
-    "sender_name": "Emeka Okafor",
+    "nomba_reference": "TXN_ABC123",
+    "sender_name": "Tobi Olukoya",
+    "sender_account": "0123456789",
+    "raw_narration": "Payment for school fees",
     "avenue_intelligence": {
-      "raw_narration": "From papa for chidi school fees term 1 part 1",
-      "extracted_intent": "Partial payment for Term 1 school fees",
-      "confidence_score": 0.97,
-      "flags": [
-        "UNDERPAYMENT_DETECTED"
-      ]
+      "raw_narration": "Payment for school fees",
+      "extracted_intent": "school fees payment",
+      "confidence_score": 0.95,
+      "flags": [],
+      "suggested_label": "School Fees"
     },
     "created_at": "2026-07-01T12:00:00Z"
   }

@@ -1,7 +1,7 @@
 ---
-title: 'List Transactions'
-api: 'GET /v1/transactions'
-description: 'List all double-entry ledger transactions across all wallets.'
+title: 'List Wallet Transactions'
+api: 'GET /v1/wallets/:wallet_id/transactions'
+description: 'List chronological ledger transactions specifically for a single wallet.'
 ---
 
 ## Request Headers
@@ -10,16 +10,16 @@ description: 'List all double-entry ledger transactions across all wallets.'
   Your live or test API key.
 </ParamField>
 
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+
 ## Query Parameters
 
-<ParamField query="wallet_id" type="string">
-  Filter transactions for a specific wallet.
-</ParamField>
 <ParamField query="type" type="string">
   Filter by `CREDIT` or `DEBIT`.
-</ParamField>
-<ParamField query="flag" type="string">
-  Filter by AI-generated flags (e.g. `UNDERPAYMENT_DETECTED`).
 </ParamField>
 <ParamField query="page" type="integer" default="1">
   The page number to retrieve.

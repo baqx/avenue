@@ -23,17 +23,26 @@ description: 'List all agents globally across all wallets.'
 {
   "success": true,
   "data": {
-    "data": [
+    "items": [
       {
-        "agent_id": "agt_987",
-        "wallet_id": "wal_abc123",
+        "id": "a9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "developer_id": "d7b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
         "name": "Auto-Sweep on Full Payment",
         "trigger": "BALANCE_ABOVE",
+        "threshold": 10000000,
         "action": "SWEEP",
+        "destination_wallet_id": "f5c3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "sweep_amount": null,
         "is_active": true,
-        "trigger_count": 4
+        "trigger_count": 4,
+        "last_triggered_at": "2026-07-01T14:00:00Z",
+        "created_at": "2026-07-01T13:00:00Z"
       }
-    ]
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
   }
 }
 ```

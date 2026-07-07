@@ -226,3 +226,77 @@ async def get_bank_code_from_name(
             
         return _BANK_CODE_CACHE.get(target_name)
 
+
+_BANKS_CACHE = None
+_BANKS_CACHE_TIME = 0.0
+
+async def get_banks(
+    account_id: str,
+    client_id: str,
+    encrypted_secret: str,
+) -> list[dict]:
+    """
+    Get the list of supported banks from Nomba.
+    Caches the list for 24 hours.
+    """
+    global _BANKS_CACHE, _BANKS_CACHE_TIME
+    now = time.time()
+    
+    if _BANKS_CACHE and now - _BANKS_CACHE_TIME < 86400: # 24 hours
+        return _BANKS_CACHE
+        
+    token = await _get_nomba_token(account_id, client_id, encrypted_secret)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{settings.NOMBA_BASE_URL}/v1/transfers/banks",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "accountId": account_id,
+            },
+            timeout=10.0,
+        )
+        if response.status_code != 200:
+            raise NombaAPIError(f"Nomba banks fetch failed: {response.text}", response.status_code)
+        
+        result = response.json()
+        if result.get("code") != "00":
+            raise NombaAPIError(f"Nomba banks fetch error: {result.get('description', 'Unknown')}")
+            
+        _BANKS_CACHE = result.get("data", {}).get("results", [])
+        _BANKS_CACHE_TIME = now
+        return _BANKS_CACHE
+
+
+async def resolve_bank_account(
+    account_id: str,
+    client_id: str,
+    encrypted_secret: str,
+    account_number: str,
+    bank_code: str,
+) -> dict:
+    """
+    Resolve an external bank account number and bank code to an account name.
+    """
+    token = await _get_nomba_token(account_id, client_id, encrypted_secret)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.NOMBA_BASE_URL}/v1/transfers/bank/lookup",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "accountId": account_id,
+            },
+            json={
+                "accountNumber": account_number,
+                "bankCode": bank_code,
+            },
+            timeout=10.0,
+        )
+        if response.status_code != 200:
+            raise NombaAPIError(f"Nomba account lookup failed: {response.text}", response.status_code)
+            
+        result = response.json()
+        if result.get("code") != "00":
+            raise NombaAPIError(f"Nomba account lookup error: {result.get('description', 'Unknown')}")
+            
+        return result.get("data", {})

@@ -1,0 +1,57 @@
+---
+title: 'Transfer Funds'
+api: 'POST /v1/wallets/:wallet_id/transfer'
+description: 'Transfer funds from a wallet to another Avenue wallet or an external bank account.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID you are sending funds from.
+</ParamField>
+
+## Request Body
+
+<ParamField body="destination_account_number" type="string" required>
+  The destination NUBAN or virtual account number.
+</ParamField>
+<ParamField body="destination_bank_code" type="string">
+  The CBN bank code of the destination (e.g. `058` for GTB). **Optional if transferring internally to another Avenue wallet.**
+</ParamField>
+<ParamField body="destination_account_name" type="string">
+  The name of the destination account.
+</ParamField>
+<ParamField body="amount" type="integer" required>
+  The amount to transfer in **kobo** (e.g. `5000000` for ₦50,000).
+</ParamField>
+<ParamField body="narration" type="string" default="Wallet Transfer">
+  Description of the transfer.
+</ParamField>
+
+## Internal vs External Transfers
+Avenue automatically detects if the `destination_account_number` belongs to another wallet managed by your developer account. 
+- **Internal Transfers**: Settled instantly via the internal double-entry ledger. No fees.
+- **External Transfers**: Routed out via Nomba to the destination bank.
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "status": "SUCCESS",
+    "transaction_id": "t9c3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "nomba_reference": "INT-ABC123DEF456",
+    "new_balance": 15000000,
+    "currency": "NGN"
+  }
+}
+```
+</ResponseExample>

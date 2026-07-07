@@ -1,0 +1,33 @@
+---
+title: 'List Banks'
+api: 'GET /v1/banks'
+description: 'Get a list of all supported external banks and their CBN codes for outbound transfers.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "code": "058",
+        "name": "Guaranty Trust Bank"
+      },
+      {
+        "code": "033",
+        "name": "United Bank for Africa"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>

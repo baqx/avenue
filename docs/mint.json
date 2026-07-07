@@ -68,7 +68,8 @@
             "api-reference/wallets/get",
             "api-reference/wallets/update",
             "api-reference/wallets/freeze",
-            "api-reference/wallets/close"
+            "api-reference/wallets/close",
+            "api-reference/wallets/transfer"
           ]
         },
         {
@@ -76,7 +77,8 @@
           "pages": [
             "api-reference/transactions/list",
             "api-reference/transactions/get",
-            "api-reference/transactions/statement"
+            "api-reference/transactions/reports",
+            "api-reference/transactions/wallet-transactions"
           ]
         },
         {
@@ -99,6 +101,13 @@
           "pages": [
             "api-reference/webhook-logs/list",
             "api-reference/webhook-logs/retry"
+          ]
+        },
+        {
+          "group": "Banks",
+          "pages": [
+            "api-reference/banks/list",
+            "api-reference/banks/resolve"
           ]
         }
       ]

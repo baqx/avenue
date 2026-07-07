@@ -103,3 +103,10 @@ class WalletReportResponse(BaseModel):
     flagged_transactions_count: int
     categories: list[CategoryInsight]
     daily_flows: list[DailyFlow]
+
+
+class SimulateCreditRequest(BaseModel):
+    amount: int  # In kobo
+    narration: str
+    sender_name: str
+

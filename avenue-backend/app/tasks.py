@@ -160,11 +160,26 @@ async def process_inbound_webhook_task(
 
             print(f"AI Result: {ai_result}")
 
-            if ai_result.get("confidence_score", 1.0) < settings.AI_CONFIDENCE_THRESHOLD:
-                if "MISDIRECTION_SUSPECTED" in ai_result.get("flags", []):
-                    reason = "AI_MISDIRECTION_SUSPECTED"
-                else:
-                    reason = "AI_LOW_CONFIDENCE"
+            flags = ai_result.get("flags", [])
+            confidence_score = ai_result.get("confidence_score", 1.0)
+
+            needs_suspense = False
+            reason = "AI_LOW_CONFIDENCE"
+
+            if "UNDERPAYMENT_DETECTED" in flags:
+                needs_suspense = True
+                reason = "AI_UNDERPAYMENT_DETECTED"
+            elif "OVERPAYMENT_DETECTED" in flags:
+                needs_suspense = True
+                reason = "AI_OVERPAYMENT_DETECTED"
+            elif "MISDIRECTION_SUSPECTED" in flags:
+                needs_suspense = True
+                reason = "AI_MISDIRECTION_SUSPECTED"
+            elif confidence_score < settings.AI_CONFIDENCE_THRESHOLD:
+                needs_suspense = True
+                reason = "AI_LOW_CONFIDENCE"
+
+            if needs_suspense:
                 await create_suspense_item(
                     developer_id=developer_id,
                     account_number=account_number,

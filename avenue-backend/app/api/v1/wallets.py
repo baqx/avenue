@@ -7,7 +7,7 @@ import re
 
 import uuid as uuid_mod
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,7 @@ from app.schemas.wallet import (
     TransferRequest,
     TransferResponse,
     WalletReportResponse,
+    SimulateCreditRequest,
 )
 from app.services import ledger as ledger_service
 from app.services.agent_runner import evaluate_agents
@@ -408,6 +409,60 @@ async def get_wallet_reports(
         db=db,
     )
     return StandardResponse(data=report)
+
+
+@router.post("/{wallet_id}/simulate-credit", response_model=StandardResponse[Any])
+async def simulate_credit(
+    wallet_id: uuid.UUID,
+    body: SimulateCreditRequest,
+    request: Request,
+    developer: Developer = CurrentDeveloper,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    DEV/TEST ONLY: Simulates an inbound bank transfer to this wallet by injecting 
+    a mock Nomba webhook payload directly into the processing queue.
+    """
+    wallet = await _get_wallet_or_404(wallet_id, developer, db)
+
+    if wallet.status != "ACTIVE":
+        raise BadRequestError(f"Cannot credit to wallet with status {wallet.status}.")
+
+    import uuid as uuid_mod
+    from datetime import datetime
+    
+    # Construct a mock Nomba webhook payload
+    mock_payload = {
+        "event_type": "payment_success",
+        "requestId": str(uuid_mod.uuid4()),
+        "data": {
+            "merchant": { "walletId": "test_merchant", "walletBalance": 0, "userId": "test" },
+            "terminal": {},
+            "transaction": {
+                "aliasAccountNumber": wallet.account_number,
+                "transactionId": f"TXN_{uuid_mod.uuid4().hex[:10]}",
+                "transactionAmount": body.amount / 100.0,  # Nomba webhook expects NGN
+                "narration": body.narration,
+                "time": datetime.utcnow().isoformat() + "Z",
+                "type": "vact_transfer"
+            },
+            "customer": {
+                "senderName": body.sender_name,
+                "accountNumber": "0987654321",
+                "bankName": "Simulation Bank",
+                "bankCode": "000"
+            }
+        }
+    }
+
+    # Queue it into the arq worker to process asynchronously exactly like a real webhook
+    await request.app.state.arq_pool.enqueue_job(
+        "process_inbound_webhook_task",
+        developer.id,
+        mock_payload
+    )
+
+    return StandardResponse(data={"status": "queued", "note": "Simulation webhook queued successfully. Check balance in a few seconds."})
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

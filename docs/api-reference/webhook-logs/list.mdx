@@ -26,15 +26,33 @@ description: 'List all outbound webhook delivery attempts from Avenue to your ap
 {
   "success": true,
   "data": {
-    "data": [
+    "items": [
       {
-        "log_id": "log_001",
+        "id": "l9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "event_id": "e9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
         "event_type": "ledger.credit",
+        "payload": {
+          "event_id": "e9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+          "event_type": "ledger.credit",
+          "api_version": "2026-07-01",
+          "created_at": "2026-07-01T12:00:00Z",
+          "data": {
+            "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+            "amount": 2500000
+          }
+        },
         "status": "DELIVERED",
         "http_status_code": 200,
+        "response_body": "OK",
+        "attempt_count": 1,
+        "next_retry_at": null,
+        "delivered_at": "2026-07-01T12:00:05Z",
         "created_at": "2026-07-01T12:00:00Z"
       }
-    ]
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
   }
 }
 ```

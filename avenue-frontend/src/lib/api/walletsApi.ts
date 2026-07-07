@@ -107,6 +107,22 @@ export const walletsApi = baseApi.injectEndpoints({
       query: (id) => `/wallets/${id}/reports`,
       providesTags: (result, error, id) => [{ type: 'Wallet', id }],
     }),
+    transferWallet: builder.mutation<{ status: string; new_balance: number; transaction_id?: string }, { id: string; destination_account_number: string; destination_bank_code?: string; destination_account_name?: string; amount: number; narration?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/wallets/${id}/transfer`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Wallet', id }],
+    }),
+    simulateCredit: builder.mutation<{ status: string }, { id: string; amount: number; narration: string; sender_name: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/wallets/${id}/simulate-credit`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Wallet', id }],
+    }),
   }),
 });
 
@@ -118,4 +134,6 @@ export const {
   useFreezeWalletMutation,
   useUnfreezeWalletMutation,
   useGetWalletReportQuery,
+  useTransferWalletMutation,
+  useSimulateCreditMutation,
 } = walletsApi;

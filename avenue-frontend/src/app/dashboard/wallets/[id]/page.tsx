@@ -1,12 +1,13 @@
 'use client';
 
-import React, { use } from 'react';
+import React, { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useGetWalletDetailsQuery, useFreezeWalletMutation, useUnfreezeWalletMutation, useCloseWalletMutation, useGetWalletReportQuery } from '@/lib/api/walletsApi';
+import { useGetWalletDetailsQuery, useFreezeWalletMutation, useUnfreezeWalletMutation, useCloseWalletMutation, useGetWalletReportQuery, useTransferWalletMutation, useSimulateCreditMutation } from '@/lib/api/walletsApi';
 import { useToast } from '@/components/ui/toast/ToastProvider';
 import { CardShimmer } from '@/components/ui/Shimmer';
-import { ArrowLeft, Bank, User, Hash, LockKey, LockKeyOpen, Trash, CircleNotch, TrendUp, TrendDown, Warning, ChartBar } from '@phosphor-icons/react';
+import { Modal } from '@/components/ui/Modal';
+import { ArrowLeft, Bank, User, Hash, LockKey, LockKeyOpen, Trash, CircleNotch, TrendUp, TrendDown, Warning, ChartBar, Plus, PaperPlaneRight } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 function WalletReportSection({ walletId }: { walletId: string }) {
@@ -102,6 +103,53 @@ export default function WalletDetailsPage({ params }: { params: Promise<{ id: st
   const [freezeWallet, { isLoading: isFreezing }] = useFreezeWalletMutation();
   const [unfreezeWallet, { isLoading: isUnfreezing }] = useUnfreezeWalletMutation();
   const [closeWallet, { isLoading: isClosing }] = useCloseWalletMutation();
+  const [transferWallet, { isLoading: isTransferring }] = useTransferWalletMutation();
+  const [simulateCredit, { isLoading: isFunding }] = useSimulateCreditMutation();
+
+  const [isFundModalOpen, setIsFundModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [fundForm, setFundForm] = useState({ amount: '', narration: '', senderName: '' });
+  const [transferForm, setTransferForm] = useState({ amount: '', destinationAccountNumber: '', destinationBankCode: '', narration: '' });
+
+  const handleFundSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wallet) return;
+    try {
+      await simulateCredit({
+        id: wallet.id,
+        amount: parseFloat(fundForm.amount) * 100, // NGN to kobo
+        narration: fundForm.narration || 'Demo funding',
+        sender_name: fundForm.senderName || 'Demo User',
+      }).unwrap();
+      toast.success('Funding Initiated', 'The webhook was queued. Balance will update shortly.');
+      setIsFundModalOpen(false);
+      setFundForm({ amount: '', narration: '', senderName: '' });
+      setTimeout(() => refetch(), 2000);
+    } catch (err: any) {
+      toast.error('Funding Failed', err?.data?.error?.message || 'Could not queue funding.');
+    }
+  };
+
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wallet) return;
+    try {
+      await transferWallet({
+        id: wallet.id,
+        amount: parseFloat(transferForm.amount) * 100, // NGN to kobo
+        destination_account_number: transferForm.destinationAccountNumber,
+        destination_bank_code: transferForm.destinationBankCode || undefined,
+        destination_account_name: transferForm.destinationBankCode ? 'External User' : undefined,
+        narration: transferForm.narration || 'Wallet Transfer',
+      }).unwrap();
+      toast.success('Transfer Successful', 'Funds have been deducted from wallet.');
+      setIsTransferModalOpen(false);
+      setTransferForm({ amount: '', destinationAccountNumber: '', destinationBankCode: '', narration: '' });
+      refetch();
+    } catch (err: any) {
+      toast.error('Transfer Failed', err?.data?.error?.message || 'Could not process transfer.');
+    }
+  };
 
   const formatCurrency = (kobo: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(kobo / 100);
@@ -177,7 +225,27 @@ export default function WalletDetailsPage({ params }: { params: Promise<{ id: st
           <p className="mt-1 text-sm text-gray-500">ID: {wallet.id}</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
+          {wallet.status !== 'CLOSED' && (
+            <>
+              <button
+                onClick={() => setIsFundModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-lg border border-transparent bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Fund Wallet
+              </button>
+              
+              <button
+                onClick={() => setIsTransferModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              >
+                <PaperPlaneRight className="w-4 h-4 mr-2" />
+                Transfer Out
+              </button>
+            </>
+          )}
+
           {wallet.status !== 'CLOSED' && (
             <button
               onClick={handleToggleFreeze}
@@ -291,6 +359,60 @@ export default function WalletDetailsPage({ params }: { params: Promise<{ id: st
       
       {/* Analytics Section */}
       <WalletReportSection walletId={wallet.id} />
+
+      <Modal isOpen={isFundModalOpen} onClose={() => setIsFundModalOpen(false)} title="Simulate Funding">
+        <form onSubmit={handleFundSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Amount (NGN)</label>
+            <input type="number" required value={fundForm.amount} onChange={e => setFundForm({...fundForm, amount: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="5000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Sender Name</label>
+            <input type="text" required value={fundForm.senderName} onChange={e => setFundForm({...fundForm, senderName: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="John Doe" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Narration</label>
+            <input type="text" required value={fundForm.narration} onChange={e => setFundForm({...fundForm, narration: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="Payment for services" />
+          </div>
+          <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+            <button type="submit" disabled={isFunding} className="inline-flex w-full justify-center rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 sm:col-start-2 disabled:opacity-70">
+              {isFunding ? <CircleNotch className="w-5 h-5 animate-spin" /> : 'Simulate Funding'}
+            </button>
+            <button type="button" onClick={() => setIsFundModalOpen(false)} className="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} title="Transfer Out">
+        <form onSubmit={handleTransferSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Amount (NGN)</label>
+            <input type="number" required value={transferForm.amount} onChange={e => setTransferForm({...transferForm, amount: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="2000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Destination Account Number</label>
+            <input type="text" required value={transferForm.destinationAccountNumber} onChange={e => setTransferForm({...transferForm, destinationAccountNumber: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="Account Number" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Destination Bank Code (Optional for internal transfers)</label>
+            <input type="text" value={transferForm.destinationBankCode} onChange={e => setTransferForm({...transferForm, destinationBankCode: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="058" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Narration</label>
+            <input type="text" required value={transferForm.narration} onChange={e => setTransferForm({...transferForm, narration: e.target.value})} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-2 border" placeholder="Refund" />
+          </div>
+          <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+            <button type="submit" disabled={isTransferring} className="inline-flex w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:col-start-2 disabled:opacity-70">
+              {isTransferring ? <CircleNotch className="w-5 h-5 animate-spin" /> : 'Transfer'}
+            </button>
+            <button type="button" onClick={() => setIsTransferModalOpen(false)} className="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
