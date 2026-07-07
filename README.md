@@ -298,6 +298,12 @@ avenue/
 | **API Health** | [johnajayi-avenue.hf.space/](https://johnajayi-avenue.hf.space/) |
 | **Docs** | [avenue.mintlify.app](https://avenue.mintlify.app) |
 
+> [!NOTE]
+> **AjoStack (Demo Application)**  
+> We also built a side project called **AjoStack** ([ajostack-app.vercel.app](https://ajostack-app.vercel.app)) to test and demonstrate the Avenue API pipeline. AjoStack is a group savings (Ajo/Esusu) platform where members are automatically provisioned dedicated virtual bank accounts via Avenue to track their contributions. 
+> 
+> **Important:** This is *not* our main project for the hackathon; it is simply a practical implementation of the Avenue infrastructure. You can sign up to test it, or use the test credentials: **Email:** `baqeecodes@gmail.com` | **Password:** `test`.
+
 ---
 
 ## Test Credentials
