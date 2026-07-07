@@ -63,7 +63,7 @@
                 "pages": [
                   "api-reference/transactions/list",
                   "api-reference/transactions/get",
-                  "api-reference/transactions/statement"
+                  "api-reference/transactions/reports"
                 ]
               },
               {
