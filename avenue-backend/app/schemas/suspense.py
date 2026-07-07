@@ -24,7 +24,7 @@ class SuspenseItemResponse(BaseModel):
 
 
 class ResolveSuspenseRequest(BaseModel):
-    action: str  # "CREDIT_WALLET" | "DISMISS"
+    action: str  # "CREDIT_WALLET" | "DISMISS" | "REFUND"
     target_wallet_id: Optional[uuid.UUID] = None
     note: Optional[str] = None
 

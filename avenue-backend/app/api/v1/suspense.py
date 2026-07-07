@@ -6,15 +6,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import CurrentDeveloper
-from app.core.errors import BadRequestError, NotFoundError
 from app.db.models.developer import Developer
+from app.db.models.nomba_config import NombaConfig
 from app.db.models.suspense import SuspenseItem
 from app.db.models.wallet import Wallet
 from app.db.session import get_db
 from app.schemas.suspense import FlagSuspenseRequest, ResolveSuspenseRequest, SuspenseItemResponse, SuspenseListResponse
 from app.schemas.base import StandardResponse
 from typing import Any
+from app.core.errors import BadRequestError, NotFoundError
 from app.services.ledger import record_credit
+from app.services.nomba import initiate_transfer
 
 router = APIRouter()
 
@@ -65,6 +67,44 @@ async def resolve_suspense(
             developer_id=developer.id, sender_name=item.sender_name, sender_account=None,
             raw_narration=item.raw_narration, ai_metadata=None, db=db,
         )
+
+    elif body.action == "REFUND":
+        # Check Nomba config
+        config_result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
+        nomba_config = config_result.scalar_one_or_none()
+        if not nomba_config:
+            raise BadRequestError("Nomba config missing. Cannot initiate refund.")
+
+        # Extract customer info from the original webhook payload
+        customer = item.raw_payload.get("data", {}).get("customer", {})
+        dest_account = customer.get("accountNumber")
+        dest_bank_code = customer.get("bankCode")
+        dest_name = customer.get("senderName") or "Refund Recipient"
+
+        if not dest_account or not dest_bank_code:
+            raise BadRequestError("Cannot automatically refund: Sender's account number or bank code is missing from the original webhook.")
+
+        # Attempt to find the wallet to determine sub-account, fallback to global
+        wallet_result = await db.execute(select(Wallet).where(Wallet.account_number == item.account_number, Wallet.developer_id == developer.id))
+        wallet = wallet_result.scalar_one_or_none()
+        sub_account_id = wallet.nomba_sub_account_id if wallet else nomba_config.sub_account_id
+
+        try:
+            await initiate_transfer(
+                account_id=nomba_config.account_id,
+                client_id=nomba_config.client_id,
+                encrypted_secret=nomba_config.encrypted_client_secret,
+                destination_account_number=dest_account,
+                destination_bank_code=dest_bank_code,
+                destination_account_name=dest_name,
+                amount_kobo=item.amount,
+                narration="Refund: " + (item.raw_narration or "Suspense Reversal"),
+                sender_name="Avenue Reversal",
+                merchant_tx_ref=f"REFUND-{item.id.hex[:16]}",
+                sub_account_id=sub_account_id,
+            )
+        except Exception as e:
+            raise BadRequestError(f"Nomba refund transfer failed: {str(e)}")
 
     item.status = "RESOLVED"
     item.resolved_at = datetime.now(timezone.utc)
