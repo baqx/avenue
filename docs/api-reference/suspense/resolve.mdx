@@ -19,7 +19,7 @@ description: 'Manually resolve an anomalous payment by routing it to a wallet.'
 ## Request Body
 
 <ParamField body="action" type="string" required>
-  `CREDIT_WALLET` or `DISMISS`.
+  `CREDIT_WALLET`, `DISMISS`, or `REFUND`.
 </ParamField>
 <ParamField body="target_wallet_id" type="string">
   The wallet to credit (required if action is `CREDIT_WALLET`).

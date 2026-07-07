@@ -1,0 +1,49 @@
+---
+title: 'Get Agent'
+api: 'GET /v1/wallets/:wallet_id/agents/:agent_id'
+description: 'Retrieve details of a specific agent attached to a wallet.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="wallet_id" type="string" required>
+  The Avenue wallet ID.
+</ParamField>
+<ParamField path="agent_id" type="string" required>
+  The agent ID.
+</ParamField>
+
+## Response
+
+<Note>
+  All amounts and balances in this endpoint are represented in **kobo** (e.g., `500000` = ,5,000.00). Ensure you do not send or expect Naira values.
+</Note>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": "a9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "developer_id": "d7b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "name": "Auto-Sweep on Full Payment",
+    "trigger": "BALANCE_ABOVE",
+    "threshold": 10000000,
+    "action": "SWEEP",
+    "destination_wallet_id": "f5c3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+    "sweep_amount": null,
+    "is_active": true,
+    "trigger_count": 0,
+    "last_triggered_at": null,
+    "created_at": "2026-07-01T13:00:00Z"
+  }
+}
+```
+</ResponseExample>

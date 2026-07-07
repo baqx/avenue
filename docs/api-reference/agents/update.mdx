@@ -1,7 +1,7 @@
 ---
-title: 'Create Agent'
-api: 'POST /v1/wallets/:wallet_id/agents'
-description: 'Attach an automated trigger-action rule to a specific wallet.'
+title: 'Update Agent'
+api: 'PATCH /v1/wallets/:wallet_id/agents/:agent_id'
+description: 'Update the configuration of an existing agent.'
 ---
 
 ## Request Headers
@@ -15,20 +15,17 @@ description: 'Attach an automated trigger-action rule to a specific wallet.'
 <ParamField path="wallet_id" type="string" required>
   The Avenue wallet ID.
 </ParamField>
+<ParamField path="agent_id" type="string" required>
+  The agent ID.
+</ParamField>
 
 ## Request Body
 
-<ParamField body="name" type="string" required>
+<ParamField body="name" type="string">
   A descriptive name for the agent (e.g. `Auto-Sweep`).
-</ParamField>
-<ParamField body="trigger" type="string" required>
-  The condition: `BALANCE_ABOVE`, `BALANCE_BELOW`, `ON_CREDIT`, or `ON_CREDIT_AMOUNT_ABOVE`.
 </ParamField>
 <ParamField body="threshold" type="integer">
   The amount in kobo that fires the trigger (if applicable).
-</ParamField>
-<ParamField body="action" type="string" required>
-  What the agent does: `SWEEP`, `PARTIAL_SWEEP`, `WEBHOOK_NOTIFY`, `LOCK_WALLET`.
 </ParamField>
 <ParamField body="destination_wallet_id" type="string">
   The wallet to receive funds (required for SWEEP actions).
@@ -40,7 +37,7 @@ description: 'Attach an automated trigger-action rule to a specific wallet.'
 ## Response
 
 <Note>
-  All amounts and balances in this endpoint are represented in **kobo** (e.g., `500000` = ₦5,000.00). Ensure you do not send or expect Naira values.
+  All amounts and balances in this endpoint are represented in **kobo** (e.g., `500000` = ,5,000.00). Ensure you do not send or expect Naira values.
 </Note>
 
 <ResponseExample>
@@ -51,9 +48,9 @@ description: 'Attach an automated trigger-action rule to a specific wallet.'
     "id": "a9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
     "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
     "developer_id": "d7b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
-    "name": "Auto-Sweep on Full Payment",
+    "name": "Auto-Sweep on Full Payment v2",
     "trigger": "BALANCE_ABOVE",
-    "threshold": 10000000,
+    "threshold": 12000000,
     "action": "SWEEP",
     "destination_wallet_id": "f5c3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
     "sweep_amount": null,

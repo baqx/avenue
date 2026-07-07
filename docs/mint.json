@@ -83,7 +83,11 @@
       "pages": [
         "api-reference/agents/create",
         "api-reference/agents/list",
-        "api-reference/agents/toggle"
+        "api-reference/agents/get",
+        "api-reference/agents/update",
+        "api-reference/agents/toggle",
+        "api-reference/agents/delete",
+        "api-reference/agents/logs"
       ]
     },
     {

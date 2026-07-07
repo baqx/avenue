@@ -1,0 +1,53 @@
+---
+title: 'List Agent Logs'
+api: 'GET /v1/agents/:agent_id/logs'
+description: 'List execution logs and action results for a specific agent.'
+---
+
+## Request Headers
+
+<ParamField header="x-api-key" type="string" required>
+  Your live or test API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent ID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  The page number to retrieve.
+</ParamField>
+<ParamField query="limit" type="integer" default="20">
+  Number of results per page (max 100).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "e9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "agent_id": "a9b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "wallet_id": "e4b3e8e2-b1c4-48e0-a75d-35e982d6b2c2",
+        "trigger_event": "Balance reached 10000000 kobo",
+        "action_taken": "SWEEP",
+        "result": "SUCCESS",
+        "error_message": null,
+        "created_at": "2026-07-01T14:00:00Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+</ResponseExample>
