@@ -11,15 +11,14 @@ import uuid
 
 import httpx
 from app.core.config import settings
+from app.core.errors import AvenueException
 from app.services.encryption import decrypt
 from app.core.currency import kobo_to_ngn_str
 
 
-class NombaAPIError(Exception):
-    def __init__(self, message: str, status_code: int = 500):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+class NombaAPIError(AvenueException):
+    def __init__(self, message: str, status_code: int = 400):
+        super().__init__(status_code=status_code, message=message)
 
 
 import time
@@ -259,7 +258,7 @@ async def get_banks(
             raise NombaAPIError(f"Nomba banks fetch failed: {response.text}", response.status_code)
         
         result = response.json()
-        if result.get("code") != "00":
+        if result.get("code") not in ("00", "0"):
             raise NombaAPIError(f"Nomba banks fetch error: {result.get('description', 'Unknown')}")
             
         _BANKS_CACHE = result.get("data", {}).get("results", [])
