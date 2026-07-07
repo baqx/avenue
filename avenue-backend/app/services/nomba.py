@@ -295,7 +295,7 @@ async def resolve_bank_account(
             raise NombaAPIError(f"Nomba account lookup failed: {response.text}", response.status_code)
             
         result = response.json()
-        if result.get("code") != "00":
+        if result.get("code") not in ("00", "0"):
             raise NombaAPIError(f"Nomba account lookup error: {result.get('description', 'Unknown')}")
             
         return result.get("data", {})
