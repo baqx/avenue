@@ -295,14 +295,7 @@ avenue/
 |---|---|
 | **Dashboard** | [avenue-cloud.vercel.app](https://avenue-cloud.vercel.app) |
 | **API** | [johnajayi-avenue.hf.space](https://johnajayi-avenue.hf.space) |
-| **API Health** | [johnajayi-avenue.hf.space/](https://johnajayi-avenue.hf.space/) |
-| **Docs** | [avenue.mintlify.app](https://avenue.mintlify.app) |
-
-> [!NOTE]
-> **AjoStack (Demo Application)**  
-> We also built a side project called **AjoStack** ([ajostack-app.vercel.app](https://ajostack-app.vercel.app)) to test and demonstrate the Avenue API pipeline. AjoStack is a group savings (Ajo/Esusu) platform where members are automatically provisioned dedicated virtual bank accounts via Avenue to track their contributions. 
-> 
-> **Important:** This is *not* our main project for the hackathon; it is simply a practical implementation of the Avenue infrastructure. You can sign up to test it, or use the test credentials: **Email:** `baqeecodes@gmail.com` | **Password:** `test`.
+| **Avenue Docs** | [avenue.mintlify.app](https://avenue.mintlify.app) |
 
 ---
 
@@ -318,6 +311,14 @@ You can use the following pre-seeded account to explore the dashboard without si
 Alternatively, feel free to **[sign up for a new account](https://avenue-cloud.vercel.app/signup)** — you'll get an API key immediately upon email verification.
 
 > **Note:** To actually provision wallets and process payments, you'll need to connect your own Nomba credentials in **Settings → Nomba Integration**.
+
+<br/>
+
+> [!NOTE]
+> **AjoStack (Demo Application)**  
+> We also built a side project called **AjoStack** ([ajostack-app.vercel.app](https://ajostack-app.vercel.app)) to test and demonstrate the Avenue API pipeline. AjoStack is a group savings (Ajo/Esusu) platform where members are automatically provisioned dedicated virtual bank accounts via Avenue to track their contributions. 
+> 
+> **Important:** This is *not* our main project for the hackathon; it is simply a practical implementation of the Avenue infrastructure. *AjoStack's backend is actively connected to the exact test Developer Account credentials provided above.* You can sign up to test AjoStack, or use the AjoStack test credentials: **Email:** `baqeecodes@gmail.com` | **Password:** `test`.
 
 ---
 
