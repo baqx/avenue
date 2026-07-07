@@ -263,7 +263,7 @@ Developer registers their own app URL in Avenue (outbound)
 |--------|----------|-------------|
 | `GET` | `/v1/suspense` | List all suspense items (filterable: `?status=PENDING`, `?reason=WALLET_CLOSED`) |
 | `GET` | `/v1/suspense/:suspense_id` | Get details of a specific suspense item with raw Nomba payload |
-| `POST` | `/v1/suspense/:suspense_id/resolve` | Resolve: manually credit to a wallet or mark as dismissed |
+| `POST` | `/v1/suspense/:suspense_id/resolve` | Resolve: manually credit to a wallet, refund to sender, or dismiss |
 | `POST` | `/v1/suspense/:suspense_id/flag` | Add a manual note/flag for record-keeping without resolving |
 
 **Suspense Statuses:** `PENDING` | `RESOLVED` | `FLAGGED`
@@ -286,6 +286,7 @@ Developer registers their own app URL in Avenue (outbound)
   "note": "Manually verified payment belongs to John Doe"
 }
 ```
+*Note: `action` can be `CREDIT_WALLET`, `DISMISS`, or `REFUND`. If `REFUND` is selected, Avenue automatically initiates a transfer back to the original sender's bank account.*
 
 ---
 
