@@ -305,7 +305,7 @@ You can use the following pre-seeded account to explore the dashboard without si
 
 | Field | Value |
 |---|---|
-| **Email** | `johnajayi008@gmail.com` |
+| **Email** | `johnajayi2008@gmail.com` |
 | **Password** | `1234` |
 
 Alternatively, feel free to **[sign up for a new account](https://avenue-cloud.vercel.app/signup)** — you'll get an API key immediately upon email verification.
