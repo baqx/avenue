@@ -152,16 +152,19 @@ async def process_inbound_webhook_task(
                 return f"routed_to_suspense_{reason.lower()}"
 
             # ── Step 5: AI intent parsing ──────────────────────────────────────────
-            ai_result = await parse_narration_intent(
-                raw_narration=raw_narration,
-                system_prompt=wallet.system_prompt,
-                amount_kobo=amount_kobo,
-            )
-
-            print(f"AI Result: {ai_result}")
-
-            flags = ai_result.get("flags", [])
-            confidence_score = ai_result.get("confidence_score", 1.0)
+            if wallet.system_prompt and wallet.system_prompt.strip():
+                ai_result = await parse_narration_intent(
+                    raw_narration=raw_narration,
+                    system_prompt=wallet.system_prompt,
+                    amount_kobo=amount_kobo,
+                )
+                print(f"AI Result: {ai_result}")
+                flags = ai_result.get("flags", [])
+                confidence_score = ai_result.get("confidence_score", 1.0)
+            else:
+                ai_result = None
+                flags = []
+                confidence_score = 1.0
 
             needs_suspense = False
             reason = "AI_LOW_CONFIDENCE"
