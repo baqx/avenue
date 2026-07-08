@@ -18,6 +18,7 @@ from app.core.errors import BadRequestError, NotFoundError
 from app.services.ledger import record_credit
 from app.services.nomba import initiate_transfer
 from app.services.webhook_dispatcher import dispatch_event
+from app.services.agent_runner import evaluate_agents
 
 router = APIRouter()
 
@@ -68,6 +69,7 @@ async def resolve_suspense(
             developer_id=developer.id, sender_name=item.sender_name, sender_account=None,
             raw_narration=item.raw_narration, ai_metadata=None, db=db,
         )
+        await evaluate_agents(wallet=wallet, new_credit_amount=item.amount, db=db)
 
     elif body.action == "REFUND":
         # Check Nomba config

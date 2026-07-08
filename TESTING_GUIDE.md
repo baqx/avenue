@@ -1,6 +1,6 @@
 # Avenue — Judging & Testing Guide
 
-Welcome to the Avenue testing guide! This document outlines how to test the Avenue platform end-to-end, from provisioning a smart wallet to triggering AI reconciliation and automated agents.
+Welcome to the Avenue testing guide! This document outlines how to test the Avenue platform end-to-end, from provisioning a smart wallet to triggering AI intent parsing and automated agents.
 
 ## 1. Quick Links & Credentials
 
@@ -29,7 +29,7 @@ You can test the core features directly from the Next.js dashboard.
    - *Avenue will instantly call Nomba and provision a real NUBAN for this wallet.*
 3. **Fund the Wallet:**
    - Use your bank app to make a **real test transfer** (e.g., 100 NGN) to the generated NUBAN account number.
-4. **View AI Reconciliation:**
+4. **View AI Intent Parsing:**
    - Once the payment arrives, click on the transaction in the dashboard. 
    - You will see the AI's extracted intent, confidence score, and any flags (like `UNDERPAYMENT_DETECTED`).
 5. **Test the Suspense Engine:**

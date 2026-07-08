@@ -66,7 +66,7 @@ async def receive_nomba_webhook(
     3. Idempotency check (DB UNIQUE constraint on nomba_reference)
     4. Find target wallet by aliasAccountNumber
     5. Check wallet status
-    6. Run AI reconciliation
+    6. Run AI intent parsing and classification
     7. Write double-entry ledger
     8. Evaluate agents
     9. Dispatch enriched webhook to developer

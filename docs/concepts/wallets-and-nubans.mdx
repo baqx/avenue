@@ -28,7 +28,7 @@ ACTIVE → CLOSED           (permanent, irreversible)
 
 ## The system_prompt field
 
-Each wallet has a `system_prompt` — a natural language description of the wallet's purpose that Avenue feeds to the AI engine when reconciling narrations.
+Each wallet has a `system_prompt` — a natural language description of the wallet's purpose that Avenue feeds to the AI engine when parsing narrations for intent.
 
 ```json
 {
@@ -36,7 +36,7 @@ Each wallet has a `system_prompt` — a natural language description of the wall
 }
 ```
 
-A well-crafted system prompt dramatically improves reconciliation accuracy. If a narration says "fees for third term", the AI knows the context and can produce a confident, labelled output.
+A well-crafted system prompt dramatically improves intent parsing accuracy. If a narration says "fees for third term", the AI knows the context and can produce a confident, labelled output.
 
 ## Balance calculation
 
