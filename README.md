@@ -8,7 +8,7 @@
 > 
 > See also: [Architecture & Security](file:///c:/Users/use/work/avenue/ARCHITECTURE_AND_SECURITY.md)
 
-Avenue is a managed infrastructure layer that turns Nomba's raw payment primitives into a production-grade, AI-powered wallet system. Developers bring the users and the business logic; Avenue handles the financial state, intelligent reconciliation, and everything in between.
+Avenue is a managed infrastructure layer that turns Nomba's raw payment primitives into a production-grade, AI-powered wallet system. Developers bring the users and the business logic; Avenue handles the financial state, intelligent intent parsing, and everything in between.
 
 ---
 
@@ -42,7 +42,7 @@ Avenue is a fully managed Wallet-as-a-Service (WaaS) layer that handles all of t
 
 - Dedicated NUBANs per customer, provisioned instantly
 - ACID-compliant double-entry ledger with immutable history
-- AI narration reconciliation via LLM (Groq)
+- AI narration intent parsing via LLM (Groq)
 - Suspense engine for misdirected / anomalous payments
 - Automated account agents (auto-sweep, balance alerts)
 - Enriched, signed outbound webhooks back to your platform
@@ -60,7 +60,7 @@ Avenue is a fully managed Wallet-as-a-Service (WaaS) layer that handles all of t
 | Requirement | Avenue's Solution |
 |---|---|
 | **Account provisioning flow** | `POST /v1/wallets` — instantly provisions a NUBAN via Nomba and returns the account number in one API call. Customer first name, last name, and reference are stored and linked to the account. |
-| **Inbound transfer reconciliation** | Nomba webhooks hit `POST /v1/webhooks/inbound/{developer_id}`. Avenue verifies the HMAC signature, offloads to an `arq` background worker, runs LLM intent extraction, performs double-entry crediting, and dispatches an enriched event back to the developer's registered URL. |
+| **Inbound transfer processing** | Nomba webhooks hit `POST /v1/webhooks/inbound/{developer_id}`. Avenue verifies the HMAC signature, offloads to an `arq` background worker, runs LLM intent extraction, performs double-entry crediting, and dispatches an enriched event back to the developer's registered URL. |
 | **Customer-level statement and reporting** | `GET /v1/wallets/{wallet_id}/transactions` — returns a paginated, chronological ledger with AI-enriched metadata. `GET /v1/transactions/reports` provides aggregate analytics. |
 | **Handling of misdirected payments** | The Suspense Engine catches payments to closed wallets and low-confidence AI matches. Funds are held safely in a suspense queue with full audit trail and a manual resolution API. |
 | **Clean developer API for downstream integration** | API-key authenticated REST API. Structured, consistent error responses. Signed outbound webhooks. Full documentation on Mintlify. |
@@ -86,7 +86,7 @@ Every inbound Nomba webhook carries a `transactionId`. Avenue stores this as `no
 
 Every credit and debit produces two ledger rows (debit + credit sides), with balance snapshots (`balance_before`, `balance_after`) computed atomically inside a DB transaction. Balances are never stored as mutable fields — they are derived from the immutable ledger history.
 
-### 3. AI Reconciliation Pipeline
+### 3. AI intent parsing Pipeline
 
 ```
 Nomba Webhook → HMAC Verify → arq worker → Groq LLM
@@ -99,7 +99,7 @@ The LLM receives the raw narration and the wallet's `system_prompt` and returns 
 
 ### 4. Suspense Engine
 
-Payments that cannot be automatically reconciled are never lost. They land in the Suspense Queue:
+Payments that cannot be automatically parsed are never lost. They land in the Suspense Queue:
 - Transfers to `CLOSED` wallets
 - LLM confidence below the configured threshold
 - `MISDIRECTION_SUSPECTED` flag raised by the AI
@@ -202,7 +202,7 @@ Every event dispatched to developer URLs is signed with HMAC-SHA256 using the de
 ### For Developers (API)
 - **API Key Management** — generate and revoke live API keys from the dashboard
 - **Wallet Provisioning** — create customer-named virtual accounts (NUBANs) with one API call
-- **AI Reconciliation** — LLM extracts intent from messy bank narrations, no regex required
+- **AI Intent Parsing** — LLM extracts intent from messy bank narrations, no regex required
 - **Double-Entry Ledger** — immutable, ACID-compliant ledger with full transaction history
 - **Suspense Engine** — misdirected or low-confidence payments are held safely for manual review
 - **Account Agents** — automated rules (auto-sweep, balance alerts) per wallet
@@ -243,7 +243,7 @@ avenue/
 │   │   ├── schemas/         # Pydantic request/response models
 │   │   ├── services/        # Business logic
 │   │   │   ├── nomba.py     # Nomba API client
-│   │   │   ├── ai_engine.py # Groq LLM reconciliation
+│   │   │   ├── ai_engine.py # Groq LLM intent parsing
 │   │   │   ├── ledger.py    # Double-entry accounting
 │   │   │   ├── suspense.py  # Suspense helpers
 │   │   │   ├── agent_runner.py  # Agent evaluation
@@ -305,7 +305,7 @@ You can use the following pre-seeded account to explore the dashboard without si
 
 | Field | Value |
 |---|---|
-| **Email** | `johnajayi008@gmail.com` |
+| **Email** | `johnajayi2008@gmail.com` |
 | **Password** | `1234` |
 
 Alternatively, feel free to **[sign up for a new account](https://avenue-cloud.vercel.app/signup)** — you'll get an API key immediately upon email verification.
@@ -330,7 +330,7 @@ Alternatively, feel free to **[sign up for a new account](https://avenue-cloud.v
 - Node.js 20+
 - Docker & Docker Compose (recommended for backend)
 - A Nomba developer account (for virtual account provisioning)
-- A Groq API key (for AI reconciliation)
+- A Groq API key (for AI intent parsing)
 
 ---
 

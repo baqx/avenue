@@ -12,7 +12,7 @@ This document covers Avenue's system architecture, security model, authenticatio
 - [Authentication & Authorization](#authentication--authorization)
 - [API Key Design](#api-key-design)
 - [Inbound Webhook Pipeline](#inbound-webhook-pipeline)
-- [AI Reconciliation Engine](#ai-reconciliation-engine)
+- [AI Intent Parsing Engine](#ai-intent-parsing-engine)
 - [Double-Entry Ledger](#double-entry-ledger)
 - [Suspense Engine](#suspense-engine)
 - [Outbound Webhook System](#outbound-webhook-system)
@@ -70,7 +70,7 @@ Developer Account
 │  ┌────────────────────────────────────────▼────────────────────┐    │
 │  │                       Service Layer                          │    │
 │  │  nomba.py          → Nomba API client                        │    │
-│  │  ai_engine.py      → Groq LLM reconciliation                 │    │
+│  │  ai_engine.py      → Groq LLM intent parsing                 │    │
 │  │  ledger.py         → double-entry accounting                 │    │
 │  │  suspense.py       → suspense item creation                  │    │
 │  │  agent_runner.py   → agent condition evaluation              │    │
@@ -232,7 +232,7 @@ This URL is unique per developer and is what gets registered in the Nomba dashbo
       - CLOSED → route to suspense
       - FROZEN → route to suspense
    c. If wallet has no system_prompt → skip AI, credit directly
-   d. If wallet has system_prompt → run Groq LLM reconciliation
+   d. If wallet has system_prompt → run Groq LLM intent parsing
    e. Check confidence_score against AI_CONFIDENCE_THRESHOLD (default 0.75)
       - Below threshold → route to suspense
       - At or above → write to ledger
@@ -255,7 +255,7 @@ The `nomba_reference` (Nomba's `transactionId`) is stored with a `UNIQUE` constr
 
 ---
 
-## AI Reconciliation Engine
+## AI Intent Parsing Engine
 
 The AI engine is in `app/services/ai_engine.py`. It uses the Groq API to run LLM inference on bank narrations.
 
@@ -358,7 +358,7 @@ For outbound transfers:
 
 ## Suspense Engine
 
-The Suspense Engine is Avenue's safety net. Any inbound payment that cannot be automatically reconciled is held here until a human resolves it.
+The Suspense Engine is Avenue's safety net. Any inbound payment that cannot be automatically classified is held here until a human resolves it.
 
 ### When Payments Go to Suspense
 

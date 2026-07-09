@@ -5,14 +5,14 @@ description: What is Avenue and why does it exist?
 
 # Welcome to Avenue
 
-Avenue is an intelligent **Wallet-as-a-Service** layer built on top of [Nomba](https://nomba.com). It gives developers a clean API to create dedicated virtual bank accounts (NUBANs) for their users, automatically reconcile incoming payments using AI, automate actions via account agents, and receive structured webhook events — without writing any of the infrastructure glue code themselves.
+Avenue is an intelligent **Wallet-as-a-Service** layer built on top of [Nomba](https://nomba.com). It gives developers a clean API to create dedicated virtual bank accounts (NUBANs) for their users, automatically parse and classify incoming payment intents using AI, automate actions via account agents, and receive structured webhook events — without writing any of the infrastructure glue code themselves.
 
 ## What problem does Avenue solve?
 
 When you build a product on Nomba directly, you get:
 - Raw virtual accounts (NUBANs) ✅
 - Raw payment webhooks with unstructured narrations ✅
-- No reconciliation logic ❌
+- No intent parsing logic ❌
 - No ledger ❌
 - No anomaly handling ❌
 - No automation layer ❌
@@ -25,7 +25,7 @@ Avenue sits between your product and Nomba and adds all of that.
   <Card title="Smart Wallets" icon="wallet" href="/concepts/wallets-and-nubans">
     Create a dedicated NUBAN virtual account per user with one API call.
   </Card>
-  <Card title="AI Reconciliation" icon="sparkles" href="/concepts/ai-reconciliation">
+  <Card title="AI Intent Parsing" icon="sparkles" href="/concepts/ai-intent-parsing">
     Avenue's AI engine parses every bank narration and extracts structured intent.
   </Card>
   <Card title="Account Agents" icon="robot" href="/concepts/agents">

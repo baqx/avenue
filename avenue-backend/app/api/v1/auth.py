@@ -47,6 +47,8 @@ async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
         hashed_password=hash_password(body.password),
         company_name=body.company_name,
         verification_token=verification_token,
+        is_verified=True, #for testing
+        verified_at=datetime.now(timezone.utc), #for testing
     )
     db.add(developer)
     await db.flush()
@@ -57,9 +59,9 @@ async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
         db.add(ApiKey(developer_id=developer.id, key_hash=key_hash, key_prefix=prefix, type=key_type))
 
     await db.commit()
-    await send_verification_email(body.email, body.company_name, verification_token)
+    # BYPASSED FOR TESTING: await send_verification_email(body.email, body.company_name, verification_token)
 
-    return StandardResponse(data={"message": "Account created. Please check your email to verify your account."})
+    return StandardResponse(data={"message": "Account created successfully. You can now log in."})
 
 
 @router.post("/login", response_model=StandardResponse[TokenResponse])
@@ -70,8 +72,9 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not developer or not verify_password(body.password, developer.hashed_password):
         raise BadRequestError("Invalid email or password.")
 
-    if not developer.is_verified:
-        raise BadRequestError("Please verify your email before logging in.")
+    # BYPASSED FOR TESTING:
+    # if not developer.is_verified:
+    #     raise BadRequestError("Please verify your email before logging in.")
 
     token = create_access_token(str(developer.id))
     return StandardResponse(data=TokenResponse(access_token=token, developer_id=str(developer.id)))

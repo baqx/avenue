@@ -22,7 +22,7 @@ Paste this into your Nomba dashboard. Every payment event Nomba fires will be re
 1. **Validates the HMAC-SHA256 signature** using your stored Nomba secret
 2. **Idempotency check** — rejects duplicates via DB unique constraint on `nomba_reference`
 3. **Identifies the target wallet** by matching the destination account number
-4. **AI reconciliation** — passes raw narration through the AI engine
+4. **AI intent parsing** — passes raw narration through the AI engine
 5. **Updates the double-entry ledger** — immutable credit entry added
 6. **Evaluates agent triggers** — any matching agents are executed
 7. **Queues the outbound event** — fires to your registered webhook URL

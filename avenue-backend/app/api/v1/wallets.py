@@ -355,6 +355,7 @@ async def transfer_funds(
             amount_kobo=body.amount,
             narration=body.narration or "Wallet Transfer",
             sender_name=f"{wallet.first_name} {wallet.last_name}",
+            sub_account_id=wallet.nomba_sub_account_id,
         )
         
         # Nomba accepted the transfer (it is now processing)
