@@ -24,7 +24,7 @@ export interface SuspenseListResponse {
 }
 
 export interface ResolveSuspenseRequest {
-  action: 'CREDIT_WALLET' | 'DISMISS';
+  action: 'CREDIT_WALLET' | 'REFUND';
   target_wallet_id?: string;
   note?: string;
 }

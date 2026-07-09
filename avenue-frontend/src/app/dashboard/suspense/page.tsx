@@ -31,7 +31,7 @@ export default function SuspensePage() {
     (i.account_number && i.account_number.includes(searchQuery))
   );
 
-  const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS', target_wallet_id?: string) => {
+  const handleResolve = async (action: 'CREDIT_WALLET' | 'REFUND', target_wallet_id?: string) => {
     if (!selectedItem) return;
     if (action === 'CREDIT_WALLET' && !target_wallet_id) {
       toast.error('Validation Error', 'Please select a wallet first.');
@@ -39,7 +39,7 @@ export default function SuspensePage() {
     }
     try {
       await resolveSuspense({ id: selectedItem.id, body: { action, target_wallet_id } }).unwrap();
-      toast.success('Resolved', `Transaction successfully ${action === 'CREDIT_WALLET' ? 'credited' : 'dismissed'}.`);
+      toast.success('Resolved', `Transaction successfully ${action === 'CREDIT_WALLET' ? 'credited' : 'refunded'}.`);
       setSelectedItem(null);
       setIsSelectingWallet(false);
       setSelectedWalletId("");
@@ -250,7 +250,7 @@ export default function SuspensePage() {
                 </div>
               )}
 
-              <button onClick={() => handleResolve('DISMISS')} disabled={isResolving} className={`w-full text-left p-4 rounded-xl border border-[#e4e7e9] transition-all group flex items-center justify-between ${isResolving ? 'opacity-50 cursor-not-allowed' : 'hover:border-red-400 hover:bg-red-50'}`}>
+              <button onClick={() => handleResolve('REFUND')} disabled={isResolving} className={`w-full text-left p-4 rounded-xl border border-[#e4e7e9] transition-all group flex items-center justify-between ${isResolving ? 'opacity-50 cursor-not-allowed' : 'hover:border-red-400 hover:bg-red-50'}`}>
                 <div>
                   <div className="font-bold text-[#022c22] flex items-center gap-2">
                     <ArrowUUpLeft weight="bold" className="text-red-500 group-hover:scale-110 transition-transform" />

@@ -61,8 +61,8 @@ import { useEffect } from "react";
 
 // ── Login Form ─────────────────────────────────────────────────────────────
 export function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("johnajayi2008@gmail.com");
+  const [password, setPassword] = useState("1234");
   const [login, { isLoading: loading }] = useLoginMutation();
   const dispatch = useAppDispatch();
   const toast = useToast();
@@ -235,67 +235,21 @@ export function SignupForm() {
           <Logo size="md" />
         </div>
 
-        <h1 className="text-2xl font-semibold text-[#022c22] mb-2 tracking-tighter">Create your account</h1>
-        <p className="text-sm text-[#6a6c6c] mb-8">API keys are generated automatically.</p>
+        <h1 className="text-2xl font-semibold text-[#022c22] mb-2 tracking-tighter">Demo Mode Active</h1>
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 mb-8">
+          <p className="text-sm text-amber-800 leading-relaxed">
+            Due to deployment constraints on our hosting provider right before the hackathon submission window, new account registrations are temporarily paused.
+            <br /><br />
+            To evaluate the platform, please use the pre-configured test account. The login page has been automatically filled with the test credentials for your convenience.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <InputField label="Company / App name" type="text" placeholder="PropTech Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-          <InputField label="Work email" type="email" placeholder="dev@yourapp.io" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          <div>
-            <InputField
-              label="Password"
-              type="password"
-              placeholder="Min. 8 characters"
-              required
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-            />
-            <PasswordStrength password={password} />
-          </div>
-
-          <label className="flex items-start gap-2.5 cursor-pointer mt-4">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 rounded border-[#bbbdbd] accent-[#022c22] shrink-0"
-            />
-            <span className="text-sm text-[#6a6c6c] leading-snug">
-              I agree to the{" "}
-              <Link href="#" className="text-[#022c22] underline hover:text-[#10b981]">Terms of Service</Link>
-              {" "}and{" "}
-              <Link href="#" className="text-[#022c22] underline hover:text-[#10b981]">Privacy Policy</Link>
-            </span>
-          </label>
-
-          <Button
-            variant="primary"
-            size="lg"
-            type="submit"
-            disabled={loading || !agreed}
-            className="w-full justify-center mt-2"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full block"
-                />
-                Creating account…
-              </span>
-            ) : (
-              "Create account"
-            )}
+        <Link href="/login" className="block w-full">
+          <Button variant="primary" size="lg" className="w-full justify-center">
+            Proceed to Login
           </Button>
-        </form>
-
-        <p className="text-center text-sm text-[#6a6c6c] mt-8">
-          Already have an account?{" "}
-          <Link href="/login" className="text-[#022c22] font-semibold hover:text-[#10b981] transition-colors">
-            Log in
-          </Link>
-        </p>
+        </Link>
       </motion.div>
     </div>
   );

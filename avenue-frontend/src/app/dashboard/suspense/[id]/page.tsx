@@ -25,7 +25,7 @@ export default function SuspenseResolutionPage({ params }: { params: Promise<{ i
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(kobo / 100);
   };
 
-  const handleResolve = async (action: 'CREDIT_WALLET' | 'DISMISS') => {
+  const handleResolve = async (action: 'CREDIT_WALLET' | 'REFUND') => {
     if (action === 'CREDIT_WALLET' && !selectedWalletId) {
       toast.error('Validation Error', 'Please select a destination wallet.');
       return;
@@ -41,7 +41,7 @@ export default function SuspenseResolutionPage({ params }: { params: Promise<{ i
         }
       }).unwrap();
       
-      toast.success('Resolved successfully', `The suspense item was ${action === 'CREDIT_WALLET' ? 'credited' : 'dismissed'}.`);
+      toast.success('Resolved successfully', `The suspense item was ${action === 'CREDIT_WALLET' ? 'credited' : 'refunded'}.`);
       router.push('/dashboard/suspense');
     } catch (err: any) {
       toast.error('Resolution failed', err?.data?.error?.message || err?.data?.detail || 'Could not resolve the item.');
@@ -135,7 +135,7 @@ export default function SuspenseResolutionPage({ params }: { params: Promise<{ i
                     Credit to Selected Wallet
                   </button>
                   <button
-                    onClick={() => handleResolve('DISMISS')}
+                    onClick={() => handleResolve('REFUND')}
                     disabled={isResolving}
                     className="w-full inline-flex justify-center items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-70"
                   >
