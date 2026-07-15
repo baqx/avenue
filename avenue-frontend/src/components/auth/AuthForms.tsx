@@ -61,8 +61,11 @@ import { useEffect } from "react";
 
 // ── Login Form ─────────────────────────────────────────────────────────────
 export function LoginForm() {
-  const [email, setEmail] = useState("johnajayi2008@gmail.com");
-  const [password, setPassword] = useState("1234");
+  const [email, setEmail] = useState("");
+  //const [email, setEmail] = useState("johnajayi2008@gmail.com");
+  //const [password, setPassword] = useState("1234");
+  const [password, setPassword] = useState("");
+
   const [login, { isLoading: loading }] = useLoginMutation();
   const dispatch = useAppDispatch();
   const toast = useToast();
