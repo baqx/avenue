@@ -30,6 +30,7 @@ from app.schemas.wallet import (
 )
 from app.services import ledger as ledger_service
 from app.services.agent_runner import evaluate_agents
+from app.services.idempotency import Idempotency
 from app.services.nomba import create_virtual_account, initiate_transfer, get_bank_code_from_name
 from app.schemas.base import StandardResponse
 from typing import Any
@@ -45,8 +46,28 @@ def _check_wallet_owner(wallet: Wallet, developer: Developer):
 @router.post("", response_model=StandardResponse[WalletResponse], status_code=status.HTTP_201_CREATED)
 async def create_wallet(
     body: CreateWalletRequest,
+    request: Request,
     developer: Developer = CurrentDeveloper,
     db: AsyncSession = Depends(get_db),
+):
+    # Retried provisioning must not create a second NUBAN — guard with the key.
+    idem = Idempotency(request, developer.id)
+    replay = await idem.begin()
+    if replay is not None:
+        return replay
+
+    try:
+        return await _create_wallet(body, developer, db, idem)
+    except Exception:
+        await idem.release()
+        raise
+
+
+async def _create_wallet(
+    body: CreateWalletRequest,
+    developer: Developer,
+    db: AsyncSession,
+    idem: Idempotency,
 ):
     # Get Nomba config
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
@@ -97,7 +118,9 @@ async def create_wallet(
     await db.refresh(wallet)
 
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return StandardResponse(data=_wallet_to_response(wallet, balance))
+    response = StandardResponse(data=_wallet_to_response(wallet, balance))
+    await idem.complete(status_code=status.HTTP_201_CREATED, body=response.model_dump(mode="json"))
+    return response
 
 
 @router.get("", response_model=StandardResponse[WalletListResponse])
@@ -241,11 +264,32 @@ async def get_wallet_account(
 async def transfer_funds(
     wallet_id: uuid.UUID,
     body: TransferRequest,
+    request: Request,
     developer: Developer = CurrentDeveloper,
     db: AsyncSession = Depends(get_db),
 ):
+    # A retried transfer (e.g. after a client timeout) must not move money twice.
+    idem = Idempotency(request, developer.id)
+    replay = await idem.begin()
+    if replay is not None:
+        return replay
+
+    try:
+        return await _transfer_funds(wallet_id, body, developer, db, idem)
+    except Exception:
+        await idem.release()
+        raise
+
+
+async def _transfer_funds(
+    wallet_id: uuid.UUID,
+    body: TransferRequest,
+    developer: Developer,
+    db: AsyncSession,
+    idem: Idempotency,
+):
     wallet = await _get_wallet_or_404(wallet_id, developer, db)
-    
+
     if wallet.status != "ACTIVE":
         raise BadRequestError(f"Cannot transfer from wallet with status {wallet.status}.")
     
@@ -313,14 +357,16 @@ async def transfer_funds(
             # Evaluate agents on destination wallet
             await evaluate_agents(wallet=dest_wallet, new_credit_amount=body.amount, db=db)
             await db.commit()
-            
-            return StandardResponse(data=TransferResponse(
+
+            response = StandardResponse(data=TransferResponse(
                 status="SUCCESS",
                 transaction_id=str(debit_entry.id),
                 nomba_reference=debit_entry.nomba_reference,
                 new_balance=debit_entry.balance_after,
                 currency=wallet.currency,
             ))
+            await idem.complete(status_code=status.HTTP_200_OK, body=response.model_dump(mode="json"))
+            return response
     
     # External transfer via Nomba
     if not body.destination_bank_code or not body.destination_account_name:
@@ -362,13 +408,15 @@ async def transfer_funds(
         debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
         await db.commit()
 
-        return StandardResponse(data=TransferResponse(
+        response = StandardResponse(data=TransferResponse(
             status="PROCESSING",
             transaction_id=str(debit_entry.id),
             nomba_reference=debit_entry.nomba_reference,
             new_balance=debit_entry.balance_after,
             currency=wallet.currency,
         ))
+        await idem.complete(status_code=status.HTTP_200_OK, body=response.model_dump(mode="json"))
+        return response
     except Exception as e:
         # Transfer failed immediately, refund the wallet
         await db.rollback()

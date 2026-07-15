@@ -6,6 +6,7 @@ from app.db.models.ledger import LedgerEntry
 from app.db.models.agent import Agent, AgentLog
 from app.db.models.suspense import SuspenseItem
 from app.db.models.webhook_log import WebhookLog
+from app.db.models.idempotency import IdempotencyKey
 
 __all__ = [
     "Developer",
@@ -18,4 +19,5 @@ __all__ = [
     "AgentLog",
     "SuspenseItem",
     "WebhookLog",
+    "IdempotencyKey",
 ]
