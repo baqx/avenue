@@ -11,7 +11,10 @@ from fastapi import APIRouter, Depends, Query, status, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import httpx
 from app.core.dependencies import CurrentDeveloper
+from app.core.idempotency import check_idempotency, save_idempotency
+from fastapi import Request
 from app.core.errors import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.db.models.developer import Developer
 from app.db.models.nomba_config import NombaConfig
@@ -44,10 +47,22 @@ def _check_wallet_owner(wallet: Wallet, developer: Developer):
 
 @router.post("", response_model=StandardResponse[WalletResponse], status_code=status.HTTP_201_CREATED)
 async def create_wallet(
+    request: Request,
     body: CreateWalletRequest,
     developer: Developer = CurrentDeveloper,
     db: AsyncSession = Depends(get_db),
 ):
+    # Check Idempotency
+    cached_response = await check_idempotency(request, "create_wallet")
+    if cached_response:
+        return cached_response
+
+    # Check if a wallet with this reference already exists for this developer
+    if body.customer_reference:
+        existing = await db.execute(select(Wallet).where(Wallet.developer_id == developer.id, Wallet.customer_reference == body.customer_reference))
+        if existing.scalar_one_or_none():
+            raise ConflictError("A wallet with this customer reference already exists.")
+
     # Get Nomba config
     result = await db.execute(select(NombaConfig).where(NombaConfig.developer_id == developer.id))
     nomba_config = result.scalar_one_or_none()
@@ -97,7 +112,13 @@ async def create_wallet(
     await db.refresh(wallet)
 
     balance = await ledger_service.get_wallet_balance(wallet.id, db)
-    return StandardResponse(data=_wallet_to_response(wallet, balance))
+    response_data = _wallet_to_response(wallet, balance)
+    
+    # Save Idempotency
+    response_dict = {"data": response_data.model_dump(mode='json')}
+    await save_idempotency(request, "create_wallet", response_dict)
+    
+    return StandardResponse(data=response_data)
 
 
 @router.get("", response_model=StandardResponse[WalletListResponse])
@@ -239,11 +260,17 @@ async def get_wallet_account(
 
 @router.post("/{wallet_id}/transfer", response_model=StandardResponse[TransferResponse])
 async def transfer_funds(
+    request: Request,
     wallet_id: uuid.UUID,
     body: TransferRequest,
     developer: Developer = CurrentDeveloper,
     db: AsyncSession = Depends(get_db),
 ):
+    # Check Idempotency
+    cached_response = await check_idempotency(request, "transfer_funds")
+    if cached_response:
+        return cached_response
+
     wallet = await _get_wallet_or_404(wallet_id, developer, db)
     
     if wallet.status != "ACTIVE":
@@ -314,13 +341,16 @@ async def transfer_funds(
             await evaluate_agents(wallet=dest_wallet, new_credit_amount=body.amount, db=db)
             await db.commit()
             
-            return StandardResponse(data=TransferResponse(
+            response_data = TransferResponse(
                 status="SUCCESS",
                 transaction_id=str(debit_entry.id),
                 nomba_reference=debit_entry.nomba_reference,
                 new_balance=debit_entry.balance_after,
                 currency=wallet.currency,
-            ))
+            )
+            response_dict = {"data": response_data.model_dump(mode='json')}
+            await save_idempotency(request, "transfer_funds", response_dict)
+            return StandardResponse(data=response_data)
     
     # External transfer via Nomba
     if not body.destination_bank_code or not body.destination_account_name:
@@ -362,15 +392,30 @@ async def transfer_funds(
         debit_entry.nomba_reference = transfer_data.get("merchantTxRef")
         await db.commit()
 
-        return StandardResponse(data=TransferResponse(
+        response_data = TransferResponse(
             status="PROCESSING",
             transaction_id=str(debit_entry.id),
             nomba_reference=debit_entry.nomba_reference,
             new_balance=debit_entry.balance_after,
             currency=wallet.currency,
-        ))
+        )
+        response_dict = {"data": response_data.model_dump(mode='json')}
+        await save_idempotency(request, "transfer_funds", response_dict)
+        return StandardResponse(data=response_data)
+        
+    except (httpx.TimeoutException, httpx.RequestError) as e:
+        # DO NOT REFUND! The request may have succeeded on Nomba's end.
+        # Leave as PENDING and return 504 Gateway Timeout.
+        await db.commit()  # Ensure PENDING state is saved
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=504, 
+            detail="Upstream timeout. Transfer status is UNKNOWN (PENDING). It will be reconciled via webhooks."
+        )
+        
     except Exception as e:
-        # Transfer failed immediately, refund the wallet
+        # Definitive failure (e.g. 400 Bad Request from Nomba)
+        # Safe to refund
         await db.rollback()
         # Create a compensatory credit to reverse the debit
         await ledger_service.record_credit(
