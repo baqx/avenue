@@ -72,6 +72,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not developer or not verify_password(body.password, developer.hashed_password):
         raise BadRequestError("Invalid email or password.")
 
+
     # BYPASSED FOR TESTING:
     # if not developer.is_verified:
     #     raise BadRequestError("Please verify your email before logging in.")

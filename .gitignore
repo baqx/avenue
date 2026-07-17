@@ -227,6 +227,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+render.yaml
+
 # Streamlit
 .streamlit/secrets.toml
 
