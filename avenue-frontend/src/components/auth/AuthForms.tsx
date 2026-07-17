@@ -70,7 +70,7 @@ export function LoginForm() {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const router = useRouter();
-  const isAuthenticated = useAppSelector((state) => state.authisAuthenticated);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
