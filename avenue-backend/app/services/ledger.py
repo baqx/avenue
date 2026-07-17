@@ -18,28 +18,31 @@ from app.core.errors import BadRequestError
 
 async def get_wallet_balance(wallet_id: uuid.UUID, db: AsyncSession) -> int:
     """
-    Compute the current balance by summing all CREDIT entries and subtracting DEBIT entries.
-    Balance is NEVER stored as a mutable field — always derived from immutable ledger entries.
+    Get the current balance from the wallet table (O(1)).
     """
-    result = await db.execute(
-        select(
-            func.coalesce(
-                func.sum(
-                    LedgerEntry.amount
-                ).filter(LedgerEntry.type == "CREDIT")
-            , 0) -
-            func.coalesce(
-                func.sum(
-                    LedgerEntry.amount
-                ).filter(LedgerEntry.type == "DEBIT")
-            , 0)
-        ).where(
-            LedgerEntry.wallet_id == wallet_id,
-            LedgerEntry.status.in_(["SETTLED", "PENDING"]),
-        )
-    )
-    balance = result.scalar() or 0
-    return int(balance)
+    
+    # result = await db.execute(
+    #     select(
+    #         func.coalesce(
+    #             func.sum(
+    #                 LedgerEntry.amount
+    #             ).filter(LedgerEntry.type == "CREDIT")
+    #         , 0) -
+    #         func.coalesce(
+    #             func.sum(
+    #                 LedgerEntry.amount
+    #             ).filter(LedgerEntry.type == "DEBIT")
+    #         , 0)
+    #     ).where(
+    #         LedgerEntry.wallet_id == wallet_id,
+    #         LedgerEntry.status.in_(["SETTLED", "PENDING"]),
+    #     )
+    # )
+    # balance = result.scalar() or 0
+    # return int(balance)
+    
+    result = await db.execute(select(Wallet.balance).where(Wallet.id == wallet_id))
+    return result.scalar() or 0
 
 
 async def record_credit(
@@ -58,8 +61,16 @@ async def record_credit(
     The UNIQUE constraint on nomba_reference ensures idempotency at the DB level.
     Raises IntegrityError if the reference already exists (duplicate webhook).
     """
-    balance_before = await get_wallet_balance(wallet.id, db)
+    # Lock the wallet row to prevent race conditions
+    result = await db.execute(
+        select(Wallet).where(Wallet.id == wallet.id).with_for_update()
+    )
+    locked_wallet = result.scalar_one()
+
+    balance_before = locked_wallet.balance
     balance_after = balance_before + amount_kobo
+    
+    locked_wallet.balance = balance_after
 
     entry = LedgerEntry(
         wallet_id=wallet.id,
@@ -96,11 +107,18 @@ async def record_debit(
     Atomically write a DEBIT entry (e.g. agent sweep).
     Raises if insufficient balance.
     """
-    balance_before = await get_wallet_balance(wallet.id, db)
+    # Lock the wallet row to prevent race conditions
+    result = await db.execute(
+        select(Wallet).where(Wallet.id == wallet.id).with_for_update()
+    )
+    locked_wallet = result.scalar_one()
+
+    balance_before = locked_wallet.balance
     if balance_before < amount_kobo:
         raise BadRequestError(f"Insufficient balance. Available: {balance_before} kobo, Required: {amount_kobo} kobo")
 
     balance_after = balance_before - amount_kobo
+    locked_wallet.balance = balance_after
     entry = LedgerEntry(
         wallet_id=wallet.id,
         developer_id=developer_id,

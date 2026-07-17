@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import Enum, ForeignKey, Index, String, Text
+from sqlalchemy import Enum, ForeignKey, Index, String, Text, BigInteger
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,7 @@ class Wallet(Base):
     bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
     account_name: Mapped[str] = mapped_column(String(255), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="NGN")
+    balance: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0", nullable=False)
 
     status: Mapped[str] = mapped_column(
         Enum("ACTIVE", "FROZEN", "CLOSED", name="wallet_status"),
