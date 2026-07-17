@@ -70,7 +70,7 @@ export function LoginForm() {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const router = useRouter();
-  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const isAuthenticated = useAppSelector((state) => state.authisAuthenticated);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
@@ -238,21 +238,52 @@ export function SignupForm() {
           <Logo size="md" />
         </div>
 
-        <h1 className="text-2xl font-semibold text-[#022c22] mb-2 tracking-tighter">Demo Mode Active</h1>
-        
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 mb-8">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            Due to deployment constraints on our hosting provider right before the hackathon submission window, new account registrations are temporarily paused.
-            <br /><br />
-            To evaluate the platform, please use the pre-configured test account. The login page has been automatically filled with the test credentials for your convenience.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold text-[#022c22] mb-2 tracking-tighter">Create an account</h1>
+        <p className="text-sm text-[#6a6c6c] mb-8">Start building on Avenue today.</p>
 
-        <Link href="/login" className="block w-full">
-          <Button variant="primary" size="lg" className="w-full justify-center">
-            Proceed to Login
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <InputField label="Company Name" type="text" placeholder="YourApp Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+          <InputField label="Email" type="email" placeholder="dev@yourapp.io" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <div>
+            <InputField label="Password" type="password" placeholder="Create a strong password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordStrength password={password} />
+          </div>
+
+          <label className="flex items-start gap-3 text-sm text-[#6a6c6c] mt-4 cursor-pointer">
+            <input type="checkbox" className="mt-1 rounded border-[#bbbdbd] accent-[#022c22]" required checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            <span>
+              I agree to the <Link href="/terms" className="text-[#10b981] hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#10b981] hover:underline">Privacy Policy</Link>.
+            </span>
+          </label>
+
+          <Button
+            variant="primary"
+            size="lg"
+            type="submit"
+            disabled={loading || !agreed}
+            className="w-full justify-center mt-2"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full block"
+                />
+                Creating account…
+              </span>
+            ) : (
+              "Create account"
+            )}
           </Button>
-        </Link>
+        </form>
+
+        <p className="text-center text-sm text-[#6a6c6c] mt-8">
+          Already have an account?{" "}
+          <Link href="/login" className="text-[#022c22] font-semibold hover:text-[#10b981] transition-colors">
+            Log in
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
