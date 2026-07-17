@@ -6,13 +6,17 @@
   },
   "favicon": "https://avenue-cloud.vercel.app/favicon.ico",
   "colors": {
-    "primary": "#082938",
-    "light": "#6cc7ff",
-    "dark": "#082938",
+    "primary": "#022c22",
+    "light": "#10b981",
+    "dark": "#10b981",
     "background": {
       "light": "#ffffff",
-      "dark": "#061c28"
+      "dark": "#022c22"
     }
+  },
+  "font": {
+    "family": "Plus Jakarta Sans",
+    "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
   },
   "topbarCtaButton": {
     "name": "Get started free",

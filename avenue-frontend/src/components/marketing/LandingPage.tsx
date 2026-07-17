@@ -64,12 +64,13 @@ function HeroSection() {
           <pre className="text-[#022c22] font-mono text-sm leading-loose w-full max-w-sm font-semibold">
             <code>
 {`{
-  "event": "ledger.credit",
+  "event_type": "ledger.credit",
   "data": {
     "amount": 150000,
-    "ai_intent": {
-      "confidence": 0.94,
-      "label": "School Fees"
+    "avenue_intelligence": {
+      "extracted_intent": "School fees payment",
+      "confidence_score": 0.94,
+      "flags": []
     }
   }
 }`}
@@ -213,19 +214,19 @@ const PAN_STEPS = [
     num: "01",
     title: "Create an account",
     desc: "Instantly receive live and test API keys. No waiting, no approval process.",
-    code: `POST /v1/auth/signup\n{\n  "email": "dev@yourapp.io",\n  "company": "YourApp"\n}`
+    code: `POST /v1/auth/signup\n{\n  "email": "dev@yourapp.io",\n  "password": "secure_password_123",\n  "company_name": "YourApp Inc."\n}`
   },
   {
     num: "02",
     title: "Provision wallets",
     desc: "Create a dedicated virtual NUBAN for each user with a single API call.",
-    code: `POST /v1/wallets\n{\n  "customer": "usr_182",\n  "prompt": "School fees"\n}`
+    code: `POST /v1/wallets\n{\n  "customer_reference": "usr_182",\n  "first_name": "Adewale",\n  "last_name": "Okafor",\n  "email": "adewale@example.com",\n  "system_prompt": "School fees"\n}`
   },
   {
     num: "03",
     title: "Enriched webhooks",
     desc: "Avenue's AI reads the narration and fires a clean webhook to your app.",
-    code: `{\n  "event": "ledger.credit",\n  "data": {\n    "amount": 150000,\n    "ai_intent": "School fees"\n  }\n}`
+    code: `{\n  "event_type": "ledger.credit",\n  "data": {\n    "amount": 150000,\n    "avenue_intelligence": {\n      "extracted_intent": "School fees",\n      "confidence_score": 0.94\n    }\n  }\n}`
   }
 ];
 
