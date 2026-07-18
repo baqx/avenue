@@ -5,6 +5,7 @@ import { Plus, MagnifyingGlass, GitFork, ToggleLeft, ToggleRight, Lightning, Wal
 import { PageReveal } from "@/components/ui/PageReveal";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { WalletSelect } from "@/components/ui/WalletSelect";
 
 import { useGetAgentsQuery, useToggleAgentMutation, useCreateAgentMutation } from "@/lib/api/agentsApi";
 import { useGetWalletsQuery } from "@/lib/api/walletsApi";
@@ -265,16 +266,12 @@ export default function AgentsPage() {
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-[#022c22]">Source Wallet *</label>
-            <select 
+            <WalletSelect
+              wallets={wallets}
               value={formData.wallet_id}
-              onChange={(e) => setFormData({ ...formData, wallet_id: e.target.value })}
-              className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
-            >
-              <option value="">-- Select Source Wallet --</option>
-              {wallets.map(w => (
-                <option key={w.id} value={w.id}>{w.customer_reference} - {w.account_number}</option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, wallet_id: value })}
+              placeholder="-- Select Source Wallet --"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -331,16 +328,12 @@ export default function AgentsPage() {
           {(formData.action === 'SWEEP_FULL' || formData.action === 'PARTIAL_SWEEP') && (
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-[#022c22]">Target Wallet *</label>
-              <select 
+              <WalletSelect
+                wallets={wallets.filter(w => w.id !== formData.wallet_id)}
                 value={formData.destination_wallet_id}
-                onChange={(e) => setFormData({ ...formData, destination_wallet_id: e.target.value })}
-                className="w-full h-11 px-3.5 rounded-lg border border-[#e4e7e9] text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 outline-none transition-all bg-white text-[#022c22]"
-              >
-                <option value="">-- Select Destination Wallet --</option>
-                {wallets.filter(w => w.id !== formData.wallet_id).map(w => (
-                  <option key={w.id} value={w.id}>{w.customer_reference} - {w.account_number}</option>
-                ))}
-              </select>
+                onChange={(value) => setFormData({ ...formData, destination_wallet_id: value })}
+                placeholder="-- Select Destination Wallet --"
+              />
             </div>
           )}
 
