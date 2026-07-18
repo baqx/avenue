@@ -229,6 +229,8 @@ __marimo__/
 
 render.yaml
 
+backfill_balances.py
+
 # Streamlit
 .streamlit/secrets.toml
 
